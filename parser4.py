@@ -55,7 +55,7 @@ def main():
 
     model = "claude-3-sonnet-20240229"
     start_time = time.time()
-    print(f"sending prompt to {model}")
+    print(f"prompt sent to {model}")
     response = client.messages.create(
         model=model,
         max_tokens=4000,
