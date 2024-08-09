@@ -9,3 +9,8 @@ data-engineer.pdf -> /Users/sbecker11/Desktop/Resumes/Shawn Becker - DATA ENGINE
 
 proj-mngr.pdf -> /Users/sbecker11/Desktop/Resumes/Shawn Becker - Technical Project Manager - 2024-07.pdf
 
+# run the parser
+
+# see the parsed result:
+
+
