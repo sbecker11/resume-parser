@@ -5,26 +5,40 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "debug parser1 data-engineer.pdf",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/parser1.py",
+            "console": "integratedTerminal",
+            "args": ["data-engineer.pdf", "data-engineer1.json"]
+        },
+        {
             "name": "debug: parser4 data-engineer.pdf",
             "type": "debugpy",
             "request": "launch",
-            "program": "parser4.py",
+            "program": "${workspaceFolder}/parser4.py",
             "console": "integratedTerminal",
-            "args": [
-                "data-engineer.pdf",
-                "data-engineer.json"
-            ]
+            "args": ["data-engineer.pdf","data-engineer4.json"]
         },
         {
             "name": "debug: parser4 proj-mngr.pdf",
             "type": "debugpy",
             "request": "launch",
-            "program": "parser4.py",
+            "program": "${workspaceFolder}/parser4.py",
             "console": "integratedTerminal",
+            "args": ["proj-mngr.pdf", "proj-mngr4.json"]
+        },
+        {
+            "name": "debug unittest: test_parser1.py data-engineer.pdf",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/test_parser1.py",
             "args": [
-                "proj-mngr.pdf",
-                "proj-mngr.json"
-            ]
+                "--maxfail=1",  // Stop after first failure
+                "--disable-warnings"  // Disable warnings
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
