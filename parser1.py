@@ -15,10 +15,12 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # handles phone numbers like +1 857-891-0896, +1 (857) 891-0896, 8578910896, 857-891-0896, 857.891.0896, 856_891_0896
-PHONE_REG = re.compile(r'(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s.-_]?)?\d{3}[\s.-_]?\d{4}')
+PHONE_REG = re.compile(r'(\+\d+)? ?((\(\d{3}\) ?)|(\d{3}\D?))?\d{3}\D?\d{4}')
+# PHONE_REG = re.compile(r'(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s.-_]?)?\d{3}[\s.-_]?\d{4}')
 # handles emails like 0b2J4@example.com shawn.becker@yahoo.com, 1.2.3@a.b.c
-EMAIL_REG = re.compile(r'[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+')
-  
+EMAIL_REG = re.compile(r'[A-Za-z0-9\._%+\-]+@[A-Za-z0-9\.\-]+\.[A-Za-z]{2,}')
+# EMAIL_REG =   re.compile(r'[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+')
+
 def extract_emails(resume_text):
     return re.findall(EMAIL_REG, resume_text)
 
@@ -61,15 +63,10 @@ def extract_text_from_pdf(pdf_path):
             full_text.append(page.extract_text())
     return '\n'.join(full_text)
 
-def main():
+def main(args):
     
-    parser = argparse.ArgumentParser(description="Process a resume PDF or DOCX and output JSON.")
-    parser.add_argument('input_resume_path', type=str, help='Path to the input resume PDF or DOCX')
-    parser.add_argument('output_resume_json_path', type=str, help='Path to the output resume JSON')
-    args = parser.parse_args()
-
-    input_resume_path = args.input_resume_path
-    output_resume_json_path = args.output_resume_json_path
+    input_resume_path = args[1]
+    output_resume_json_path = args[2]
     
     print(f"input_resume_path: {input_resume_path}")
     print(f"output_resume_json_path: {output_resume_json_path}")
@@ -93,4 +90,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.args)

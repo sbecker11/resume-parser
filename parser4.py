@@ -1,30 +1,55 @@
 import time
 import pdfplumber
-import re
 import sys
 import anthropic
 import json
 import os
 from dotenv import load_dotenv
+from docx import Document
 
 
 # Function to extract text from PDF using pdfplumber
-def extract_text_with_formatting(pdf_path):
+def extract_text_from_pdf_with_formatting(pdf_path):
     text = ""
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text += page.extract_text() + "\n"
     return text
 
+def extract_text_from_docx_with_formatting(docx_path):
+    text = ""
+    doc = Document(docx_path)
+    
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + "\n"
+    
+    return text
+
 # Function to extract text from PDF using PyPDF2
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python script.py <path_to_input_resume.pdf> <path_to_output_resume.json>")
+        print("Usage: python parser4.py <path_to_input_resume.pdf|docx> <path_to_output_resume.json>")
         return
 
-    pdf_path = sys.argv[1]
+    input_path = sys.argv[1]
+    pdf_path = input_path if input_path.lower().endswith('.pdf') else None
+    docx_path = input_path if input_path.lower().endswith('.docx') else None
     json_path = sys.argv[2]
-    resume_text = extract_text_with_formatting(pdf_path)
+    
+    if pdf_path:
+        # verify file exists
+        if not os.path.exists(pdf_path):
+            print(f"pdf file not found: {pdf_path}")
+            return
+        resume_text = extract_text_from_pdf_with_formatting(pdf_path)
+    elif docx_path:
+        if not os.path.exists(docx_path):
+            print(f"docx file not found: {docx_path}")
+            return
+        resume_text = extract_text_from_docx_with_formatting(docx_path)
+    else:
+        print("Invalid input file format. Only PDF and DOCX files are supported.")
+        return
 
     # Initialize the Anthropic client, after getting 
     # ANTHROPIC_API_KEY from the .env file at the root of the project
@@ -38,6 +63,11 @@ def main():
     2. Position or Professional Title
     3. Professional Summary (optional)
     4. Work Experience
+    4.1. Company Name
+    4.2. Location (City, State, Country) or Remote
+    4.3. Duration
+    4.4. Position or Title
+    4.5. Responsibilities
     5. Education
     6. Skills
     7. Certifications (optional)
@@ -46,8 +76,8 @@ def main():
     10. Websites or Online Profiles (optional)
 
     Please use these sections to organize the information from the following resume. If an optional section is not present in the resume, omit it from the JSON object.
-    If you encounter a duration use it to define sub objects "start" and "end" in the JSON object. 
-    If you encounter a string with bullet points (•), replace it with a list of item in the JSON object.
+    If you encounter a duration with format ( mm/dd/yyyy - mm/dd/yyyy ) or ( mm/yyyy - mm/yyyy ) or ( yyyy - yyyy ), use it to define a "duration" sub-object with properties "start" and "end", retaining theoriginal string values, in the JSON object.
+    If you encounter a bulletted string with bullet points (•), use a bullet point to split the string into a comma-separated list of strings and use it to replace the original bulletted string in the JSON object.
 
     {resume_text}
 

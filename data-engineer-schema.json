@@ -1,0 +1,170 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "contactInformation": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "email",
+                "location",
+                "name",
+                "phone"
+            ]
+        },
+        "position": {
+            "type": "string"
+        },
+        "professionalSummary": {
+            "type": "string"
+        },
+        "workExperience": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "company": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "duration": {
+                        "type": "object",
+                        "properties": {
+                            "start": {
+                                "type": "string"
+                            },
+                            "end": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "end",
+                            "start"
+                        ]
+                    },
+                    "position": {
+                        "type": "string"
+                    },
+                    "responsibilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "company",
+                    "duration",
+                    "location",
+                    "position",
+                    "responsibilities"
+                ]
+            }
+        },
+        "education": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "institution": {
+                        "type": "string"
+                    },
+                    "degree": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "degree",
+                    "institution"
+                ]
+            }
+        },
+        "skills": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "certifications": {
+            "type": "string"
+        },
+        "publications": {
+            "type": "string"
+        },
+        "patents": {
+            "type": "string"
+        },
+        "websites": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "url"
+                ]
+            }
+        },
+        "currentWork": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "repository": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "description",
+                    "name",
+                    "repository",
+                    "url"
+                ]
+            }
+        }
+    },
+    "required": [
+        "certifications",
+        "contactInformation",
+        "currentWork",
+        "education",
+        "patents",
+        "position",
+        "professionalSummary",
+        "publications",
+        "skills",
+        "websites",
+        "workExperience"
+    ]
+}

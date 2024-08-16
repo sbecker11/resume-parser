@@ -29,16 +29,19 @@
             "args": ["proj-mngr.pdf", "proj-mngr4.json"]
         },
         {
-            "name": "debug unittest: test_parser1.py data-engineer.pdf",
+            "name": "debug A unittest: test_parser1.py data-engineer.pdf",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/tests/test_parser1.py",
+            "module": "tests.test_parser1",
             "args": [
-                "--maxfail=1",  // Stop after first failure
-                "--disable-warnings"  // Disable warnings
+                "--maxfail=1",
+                "--disable-warnings",
+                "../resume.pdf",
+                "../resume.json"
             ],
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
