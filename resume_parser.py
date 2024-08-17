@@ -6,7 +6,6 @@ import json
 import os
 from dotenv import load_dotenv
 from docx import Document
-from docx import Document
 
 # Function to extract text from PDF using pdfplumber
 def extract_text_from_pdf_with_formatting(resume_pdf_path):
