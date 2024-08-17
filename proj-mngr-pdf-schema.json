@@ -3,29 +3,9 @@
     "type": "object",
     "properties": {
         "contactInformation": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "location": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "email",
-                "location",
-                "name",
-                "phone"
-            ]
+            "type": "string"
         },
-        "position": {
+        "positionOrProfessionalTitle": {
             "type": "string"
         },
         "professionalSummary": {
@@ -36,7 +16,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "company": {
+                    "companyName": {
                         "type": "string"
                     },
                     "location": {
@@ -57,7 +37,7 @@
                             "start"
                         ]
                     },
-                    "position": {
+                    "positionOrTitle": {
                         "type": "string"
                     },
                     "responsibilities": {
@@ -68,10 +48,10 @@
                     }
                 },
                 "required": [
-                    "company",
+                    "companyName",
                     "duration",
                     "location",
-                    "position",
+                    "positionOrTitle",
                     "responsibilities"
                 ]
             }
@@ -94,6 +74,12 @@
                 ]
             }
         },
+        "skills": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "certifications": {
             "type": "string"
         },
@@ -103,25 +89,7 @@
         "patents": {
             "type": "string"
         },
-        "websites": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "type": "string"
-                    },
-                    "url": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "type",
-                    "url"
-                ]
-            }
-        },
-        "skills": {
+        "websitesOrOnlineProfiles": {
             "type": "array",
             "items": {
                 "type": "string"
@@ -133,11 +101,11 @@
         "contactInformation",
         "education",
         "patents",
-        "position",
+        "positionOrProfessionalTitle",
         "professionalSummary",
         "publications",
         "skills",
-        "websites",
+        "websitesOrOnlineProfiles",
         "workExperience"
     ]
 }

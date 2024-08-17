@@ -5,20 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "debug parser1 data-engineer.pdf",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/parser1.py",
             "console": "integratedTerminal",
-            "args": ["data-engineer.pdf", "data-engineer1.json"]
+            "args": [
+                "data-engineer.pdf",
+                "data-engineer1.json"
+            ]
         },
         {
-            "name": "debug: parser4 data-engineer.pdf",
+            "name": "debug: parser4 proj-mngr.docx",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/parser4.py",
             "console": "integratedTerminal",
-            "args": ["data-engineer.pdf","data-engineer4.json"]
+            "args": [
+                "proj-mngr.docx",
+                "proj-mngr-docx.json"
+            ]
         },
         {
             "name": "debug: parser4 proj-mngr.pdf",
@@ -26,7 +39,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/parser4.py",
             "console": "integratedTerminal",
-            "args": ["proj-mngr.pdf", "proj-mngr4.json"]
+            "args": [
+                "proj-mngr.pdf",
+                "proj-mngr-pdf.json"
+            ]
         },
         {
             "name": "debug A unittest: test_parser1.py data-engineer.pdf",
