@@ -23,10 +23,10 @@
             ]
         },
         {
-            "name": "debug: parser4 proj-mngr.docx",
+            "name": "debug: resume_parser proj-mngr.docx",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/parser4.py",
+            "program": "${workspaceFolder}/resume_parser.py",
             "console": "integratedTerminal",
             "args": [
                 "proj-mngr.docx",
@@ -34,10 +34,10 @@
             ]
         },
         {
-            "name": "debug: parser4 proj-mngr.pdf",
+            "name": "debug: resume_parser proj-mngr.pdf",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/parser4.py",
+            "program": "${workspaceFolder}/resume_parser.py",
             "console": "integratedTerminal",
             "args": [
                 "proj-mngr.pdf",

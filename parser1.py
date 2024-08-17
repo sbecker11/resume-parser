@@ -1,5 +1,5 @@
 # for parser1.py pip install pdfplumber docx docx2txt typing_extensions
-# for parser4.py pip install dotenv-python pydantic anthropic
+# for resume_parser.py pip install dotenv-python pydantic anthropic
 # for tests pip install pytest-lazy-fixture
 
 import sys

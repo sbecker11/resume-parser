@@ -10,10 +10,10 @@ python3 -m pip install -r requirements.txt;
 </pre>
 
 ### use anthropic claude to extract json structure from a pdf file
-<pre>python parser4.py proj-mngr.pdf proj-mngr-pdf.json</pre>
+<pre>python resume_parser.py proj-mngr.pdf proj-mngr-pdf.json</pre>
 
 ### use anthropic claude to extract json structure from a docx file
-<pre>python parser4.py proj-mngr.docx proj-mngr-docx.json</pre>
+<pre>python resume_parser.py proj-mngr.docx proj-mngr-docx.json</pre>
 
 ### verify that the extracted json files are -nearly- identical  
 <pre>diff proj-mngr-pdf.json proj-mngr-docx.json</pre>

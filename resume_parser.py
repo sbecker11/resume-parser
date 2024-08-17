@@ -25,7 +25,7 @@ def extract_text_from_docx_with_formatting(resume_input_docx_path):
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python parser4.py <path_to_input_resume.pdf|docx> <path_to_output_resume.json>")
+        print("Usage: python resume_parser.py <path_to_input_resume.pdf|docx> <path_to_output_resume.json>")
         return
 
     resume_input_path = sys.argv[1]
