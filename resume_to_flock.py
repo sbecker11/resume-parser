@@ -8,6 +8,7 @@ Usage:
   --output-dir   Where to write jobs.mjs and skills.mjs
   --no-llm       Skip LLM calls; use extraction only (for testing)
   --no-enrich    Skip LLM skill URL enrichment
+  --provider     Force LLM provider: anthropic or openai (default: anthropic if key set, else openai)
 """
 
 import argparse
@@ -15,6 +16,11 @@ import json
 import os
 import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env from script directory (reliable regardless of cwd)
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # Add parent for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -25,6 +31,7 @@ from parsers import (
     extract_skills_from_text,
     enrich_skills_with_llm,
     jobs_to_flock_format,
+    get_llm_provider,
 )
 
 
@@ -85,11 +92,20 @@ def main() -> int:
         action="store_true",
         help="Skip LLM skill URL enrichment",
     )
+    parser.add_argument(
+        "--provider",
+        choices=["anthropic", "openai"],
+        default=None,
+        help="Force LLM provider (default: anthropic if key set, else openai)",
+    )
     args = parser.parse_args()
 
     if not args.resume.exists():
         print(f"Error: File not found: {args.resume}", file=sys.stderr)
         return 1
+
+    if args.provider:
+        os.environ["LLM_PROVIDER"] = args.provider
 
     out_dir = args.output_dir or _default_output_dir()
     print(f"Output directory: {out_dir}")
@@ -108,7 +124,12 @@ def main() -> int:
         return 0
 
     # Phase 2: Parse jobs with LLM
-    print("Parsing jobs with LLM...")
+    try:
+        provider = get_llm_provider()
+    except RuntimeError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    print(f"Parsing jobs with LLM ({provider})...")
     try:
         jobs = parse_jobs_with_llm(raw_text)
     except RuntimeError as e:
@@ -120,7 +141,7 @@ def main() -> int:
     flock_jobs = jobs_to_flock_format(jobs)
 
     # Phase 3: Extract skills from descriptions
-    all_desc = " ".join(j.get("description", "") or "" for j in flock_jobs)
+    all_desc = " ".join(j.get("Description", "") or "" for j in flock_jobs)
     skills = extract_skills_from_text(all_desc)
     print(f"Extracted {len(skills)} skills from descriptions")
 

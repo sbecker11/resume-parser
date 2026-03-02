@@ -20,19 +20,61 @@ DEFAULT_PALETTE = [
 ]
 
 
+def get_llm_provider() -> str:
+    """Return provider name ('anthropic' or 'openai') if a key is set, else raise."""
+    forced = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
+    if forced in ("anthropic", "openai"):
+        key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip() if forced == "anthropic" else (os.environ.get("OPENAI_API_KEY") or "").strip()
+        if key:
+            return forced
+        raise RuntimeError(f"LLM_PROVIDER={forced} but {forced.upper()}_API_KEY not set.")
+    if (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
+        return "anthropic"
+    if (os.environ.get("OPENAI_API_KEY") or "").strip():
+        return "openai"
+    raise RuntimeError(
+        "No LLM API key set. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env or environment."
+    )
+
+
+def _llm_provider() -> tuple[str, object]:
+    """Return (provider_name, client). Respect LLM_PROVIDER env, else prefer Anthropic, else OpenAI."""
+    provider = get_llm_provider()
+    if provider == "anthropic":
+        from anthropic import Anthropic
+        return ("anthropic", Anthropic(api_key=(os.environ.get("ANTHROPIC_API_KEY") or "").strip()))
+    from openai import OpenAI
+    return ("openai", OpenAI(api_key=(os.environ.get("OPENAI_API_KEY") or "").strip()))
+
+
+def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> str:
+    """Call LLM and return response text. Uses Anthropic or OpenAI based on available key."""
+    provider, client = _llm_provider()
+    if provider == "anthropic":
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        return response.content[0].text
+    else:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content or ""
+
+
 def parse_jobs_with_llm(raw_text: str) -> list[dict[str, Any]]:
     """
-    Use Anthropic Claude to extract structured jobs from resume text.
+    Use LLM (Anthropic Claude or OpenAI GPT) to extract structured jobs from resume text.
     Returns list of job dicts with role, employer, start, end, description.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set. Set it in .env or environment.")
-
-    from anthropic import Anthropic
-
-    client = Anthropic(api_key=api_key)
-
     system_prompt = """You are a resume parser. Extract work experience and education entries from the resume text.
 Output valid JSON only, no markdown or explanation. Use this exact schema:
 {
@@ -44,27 +86,25 @@ Output valid JSON only, no markdown or explanation. Use this exact schema:
       "end": "YYYY-MM-DD or CURRENT_DATE for present/current roles",
       "employer_city": "string or null",
       "employer_website": "string or null",
-      "description": "string with bullet points (•) for each achievement. Preserve [bracketed] skill terms exactly as written."
+      "description": "string with bullet points (•) for each achievement."
     }
   ]
 }
 Rules:
 - One job per experience block
 - Normalize dates: "Aug 2024" -> "2024-08-01", "Present" -> "CURRENT_DATE"
-- Keep [SkillName] and [SkillName](url) markup in descriptions
 - Use • as bullet delimiter
+- IMPORTANT: Wrap every technology, framework, tool, and skill in [SkillName] brackets. Examples:
+  "Python and Pandas" -> "[Python] and [Pandas]"
+  "AWS SageMaker" -> "[AWS SageMaker]" or "[AWS] [SageMaker]"
+  "React 19/Node.js" -> "[React] [Node.js]"
+  "LangChain and ChromaDB" -> "[LangChain] and [ChromaDB]"
+  Include programming languages, frameworks, cloud services, databases, tools, and methodologies.
 """
 
     user_prompt = f"Extract all work experience and education from this resume:\n\n{raw_text}"
+    text = _call_llm(system_prompt, user_prompt)
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=8192,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-
-    text = response.content[0].text
     # Strip markdown code blocks if present
     if "```" in text:
         text = re.sub(r"```(?:json)?\s*", "", text)
@@ -103,19 +143,17 @@ def enrich_skills_with_llm(skills: dict[str, dict[str, str]]) -> dict[str, dict[
     """
     Use LLM to suggest URLs for skills that don't have one.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
+    try:
+        _llm_provider()
+    except RuntimeError:
         return skills
 
     skills_needing_url = [name for name, data in skills.items() if not data.get("url")]
     if not skills_needing_url:
         return skills
 
-    from anthropic import Anthropic
-
-    client = Anthropic(api_key=api_key)
-
-    prompt = f"""For each of these skills/technologies, suggest the official or canonical URL (e.g., Python -> https://python.org).
+    system_prompt = "Output valid JSON only, no markdown or explanation."
+    user_prompt = f"""For each of these skills/technologies, suggest the official or canonical URL (e.g., Python -> https://python.org).
 Output valid JSON only:
 {{ "suggestions": [ {{ "name": "SkillName", "url": "https://..." }} ] }}
 
@@ -123,12 +161,7 @@ Skills: {json.dumps(skills_needing_url)}
 """
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.content[0].text
+        text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
         if "```" in text:
             text = re.sub(r"```(?:json)?\s*", "", text)
             text = re.sub(r"```\s*$", "", text)

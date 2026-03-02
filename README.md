@@ -11,11 +11,15 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-Create `.env` from `.env.example` and add your Anthropic API key:
+Create `.env` and add at least one LLM API key:
 
 ```
-ANTHROPIC_API_KEY=your-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+# or
+OPENAI_API_KEY=your-openai-key-here
 ```
+
+Anthropic is preferred if both are set. Use `--provider openai` to force OpenAI.
 
 ## Usage
 
@@ -31,6 +35,7 @@ python resume_to_flock.py /path/to/resume.pdf -o /path/to/output
 | `-o`, `--output-dir` | Where to write `jobs.mjs` and `skills.mjs` (default: flock-of-postcards/static_content if found, else cwd) |
 | `--no-llm` | Skip LLM; only extract text (for testing) |
 | `--no-enrich` | Skip LLM skill URL enrichment |
+| `--provider` | Force LLM provider: `anthropic` or `openai` |
 
 ## Output
 
@@ -40,7 +45,7 @@ python resume_to_flock.py /path/to/resume.pdf -o /path/to/output
 ## Pipeline
 
 1. **Extract** – python-docx (DOCX) or pdfplumber (PDF) → raw text
-2. **Parse jobs** – Anthropic Claude extracts structured jobs with dates and descriptions
+2. **Parse jobs** – LLM (Anthropic Claude or OpenAI GPT) extracts structured jobs with dates and descriptions
 3. **Extract skills** – Regex `[text]{img}(url)` from descriptions
 4. **Enrich** – Optional LLM pass to suggest URLs for skills without one
 
