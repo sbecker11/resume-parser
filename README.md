@@ -11,21 +11,17 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-Create `.env` and add at least one LLM API key:
+Create `.env` and add at least the LLM API key:
 
 ```
 ANTHROPIC_API_KEY=your-anthropic-key-here
-# or
-OPENAI_API_KEY=your-openai-key-here
 ```
-
-Anthropic is preferred if both are set. Use `--provider openai` to force OpenAI.
 
 ## Usage
 
 ```bash
-python resume_to_flock.py /path/to/resume.docx
-python resume_to_flock.py /path/to/resume.pdf -o /path/to/output
+python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
+
 ```
 
 ### Options
@@ -45,12 +41,10 @@ python resume_to_flock.py /path/to/resume.pdf -o /path/to/output
 ## Pipeline
 
 1. **Extract** – python-docx (DOCX) or pdfplumber (PDF) → raw text
-2. **Parse jobs** – LLM (Anthropic Claude or OpenAI GPT) extracts structured jobs with dates and descriptions
+2. **Parse jobs** – LLM (Anthropic) extracts structured jobs with dates and descriptions
 3. **Extract skills** – Regex `[text]{img}(url)` from descriptions
 4. **Enrich** – Optional LLM pass to suggest URLs for skills without one
 
 ## Flock integration
 
-When run from `workspace-resume/resume-parser`, the default output is `flock-of-postcards/static_content` if that path exists. Otherwise output goes to the current directory.
-
-See [flock-of-postcards/docs/RESUME_TO_FLOCK_DESIGN.md](https://github.com/sbecker11/flock-of-postcards/blob/master/docs/RESUME_TO_FLOCK_DESIGN.md) for the full design.
+The generated output files can be read by `workspace-resume/resume-flock`
