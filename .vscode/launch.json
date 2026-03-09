@@ -12,17 +12,6 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "debug parser1 data-engineer.pdf",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/parser1.py",
-            "console": "integratedTerminal",
-            "args": [
-                "data-engineer.pdf",
-                "data-engineer1.json"
-            ]
-        },
-        {
             "name": "debug: resume_parser proj-mngr.docx",
             "type": "debugpy",
             "request": "launch",
@@ -45,18 +34,16 @@
             ]
         },
         {
-            "name": "debug A unittest: test_parser1.py data-engineer.pdf",
+            "name": "debug: unittest tests",
             "type": "debugpy",
             "request": "launch",
-            "module": "tests.test_parser1",
+            "module": "unittest",
             "args": [
-                "--maxfail=1",
-                "--disable-warnings",
-                "../resume.pdf",
-                "../resume.json"
+                "discover",
+                "-s", "tests",
+                "-v"
             ],
             "console": "integratedTerminal",
-            "justMyCode": false,
             "cwd": "${workspaceFolder}"
         }
     ]

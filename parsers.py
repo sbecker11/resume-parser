@@ -21,34 +21,33 @@ DEFAULT_PALETTE = [
 
 
 def get_llm_provider() -> str:
-    """Return provider name ('anthropic' or 'openai') if a key is set, else raise."""
+    """Return LLM provider name ('anthropic') if ANTHROPIC_API_KEY is set, else raise.
+    Optional: set LLM_PROVIDER=anthropic to force Anthropic (still requires ANTHROPIC_API_KEY).
+    """
     forced = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
-    if forced in ("anthropic", "openai"):
-        key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip() if forced == "anthropic" else (os.environ.get("OPENAI_API_KEY") or "").strip()
+    if forced == "anthropic":
+        key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
         if key:
-            return forced
-        raise RuntimeError(f"LLM_PROVIDER={forced} but {forced.upper()}_API_KEY not set.")
+            return "anthropic"
+        raise RuntimeError("LLM_PROVIDER=anthropic but ANTHROPIC_API_KEY not set.")
     if (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
         return "anthropic"
-    if (os.environ.get("OPENAI_API_KEY") or "").strip():
-        return "openai"
     raise RuntimeError(
-        "No LLM API key set. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env or environment."
+        "No LLM API key set. Set ANTHROPIC_API_KEY (LLM_PROVIDER=anthropic) in .env or environment."
     )
 
 
 def _llm_provider() -> tuple[str, object]:
-    """Return (provider_name, client). Respect LLM_PROVIDER env, else prefer Anthropic, else OpenAI."""
+    """Return (LLM provider name, client). Uses LLM_PROVIDER / ANTHROPIC_API_KEY; Anthropic only."""
     provider = get_llm_provider()
     if provider == "anthropic":
         from anthropic import Anthropic
         return ("anthropic", Anthropic(api_key=(os.environ.get("ANTHROPIC_API_KEY") or "").strip()))
-    from openai import OpenAI
-    return ("openai", OpenAI(api_key=(os.environ.get("OPENAI_API_KEY") or "").strip()))
+    raise RuntimeError("Unsupported LLM provider")
 
 
 def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> str:
-    """Call LLM and return response text. Uses Anthropic or OpenAI based on available key."""
+    """Call LLM (provider from get_llm_provider / LLM_PROVIDER) and return response text. Anthropic only."""
     provider, client = _llm_provider()
     if provider == "anthropic":
         response = client.messages.create(
@@ -58,21 +57,12 @@ def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> s
             messages=[{"role": "user", "content": user_prompt}],
         )
         return response.content[0].text
-    else:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            max_tokens=max_tokens,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
-        return response.choices[0].message.content or ""
+    raise RuntimeError("Unsupported LLM provider")
 
 
 def parse_jobs_with_llm(raw_text: str) -> list[dict[str, Any]]:
     """
-    Use LLM (Anthropic Claude or OpenAI GPT) to extract structured jobs from resume text.
+    Use LLM (LLM_PROVIDER=anthropic, ANTHROPIC_API_KEY) to extract structured jobs from resume text.
     Returns list of job dicts with role, employer, start, end, description.
     """
     system_prompt = """You are a resume parser. Extract work experience and education entries from the resume text.
@@ -141,7 +131,7 @@ def extract_skills_from_text(text: str) -> dict[str, dict[str, str]]:
 
 def enrich_skills_with_llm(skills: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     """
-    Use LLM to suggest URLs for skills that don't have one.
+    Use LLM (LLM_PROVIDER / ANTHROPIC_API_KEY) to suggest URLs for skills that don't have one.
     """
     try:
         _llm_provider()
@@ -216,7 +206,7 @@ def _css_name_from_hex(hex_str: str) -> str:
     """Simple mapping for common colors; otherwise generic."""
     mapping = {
         "#116611": "darkforest",
-        "#0069AC": "darkcyan",
+        "#0069ac": "darkcyan",
         "#006688": "darkcyan",
         "#0000ff": "blue",
         "#4400cd": "mediumblue",
@@ -229,7 +219,7 @@ def _css_name_from_hex(hex_str: str) -> str:
         "#008b8b": "darkcyan",
         "#dc143c": "crimson",
     }
-    return mapping.get(hex_str.upper(), "darkgreen")
+    return mapping.get(hex_str.lower(), "darkgreen")
 
 
 def _normalize_date(s: str | None) -> str:

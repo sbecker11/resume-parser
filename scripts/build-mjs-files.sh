@@ -19,5 +19,6 @@ done
 
 # create new mjs files (writes to static_content/jobs/ and static_content/skills/)
 cd "$(dirname "$0")/.."
-python resume_to_flock.py "$RESUME_FILE" -o "$FLOCK_STATIC" --provider openai
+# --provider openai (commented out; Anthropic only)
+python resume_to_flock.py "$RESUME_FILE" -o "$FLOCK_STATIC"
 

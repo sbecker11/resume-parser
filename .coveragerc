@@ -1,0 +1,11 @@
+[run]
+# Do not measure or report on system/vendor and project venv
+omit =
+    */site-packages/*
+    */venv/*
+    */.venv/*
+
+[report]
+# Same omits for the report (in case run picks up something)
+exclude_lines =
+    pragma: no cover

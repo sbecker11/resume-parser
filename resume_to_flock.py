@@ -8,7 +8,7 @@ Usage:
   --output-dir   Where to write jobs.mjs and skills.mjs
   --no-llm       Skip LLM calls; use extraction only (for testing)
   --no-enrich    Skip LLM skill URL enrichment
-  --provider     Force LLM provider: anthropic or openai (default: anthropic if key set, else openai)
+  --provider     Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY
 """
 
 import argparse
@@ -94,9 +94,9 @@ def main() -> int:
     )
     parser.add_argument(
         "--provider",
-        choices=["anthropic", "openai"],
+        choices=["anthropic"],
         default=None,
-        help="Force LLM provider (default: anthropic if key set, else openai)",
+        help="Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY",
     )
     args = parser.parse_args()
 

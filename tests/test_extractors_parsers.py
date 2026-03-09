@@ -1,0 +1,323 @@
+"""
+Tests for the resume-parser pipeline: extractors and parsers (no LLM calls).
+Run from repo root: python -m unittest discover -s tests
+"""
+import os
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from extractors import extract_text
+from parsers import (
+    extract_skills_from_text,
+    get_llm_provider,
+    jobs_to_flock_format,
+    enrich_skills_with_llm,
+    parse_jobs_with_llm,
+    _hex_to_rgb,
+    _css_name_from_hex,
+    _normalize_date,
+    _normalize_end_date,
+)
+
+
+class TestExtractSkillsFromText(unittest.TestCase):
+    """Test parsers.extract_skills_from_text (pure function, no LLM)."""
+
+    def test_empty_string(self):
+        self.assertEqual(extract_skills_from_text(""), {})
+
+    def test_no_brackets(self):
+        self.assertEqual(extract_skills_from_text("Python and Java"), {})
+
+    def test_simple_skill(self):
+        self.assertEqual(
+            extract_skills_from_text("Used [Python] for scripting."),
+            {"Python": {"url": "", "img": ""}},
+        )
+
+    def test_skill_with_url(self):
+        self.assertEqual(
+            extract_skills_from_text("See [Pandas](https://pandas.pydata.org) for docs."),
+            {"Pandas": {"url": "https://pandas.pydata.org", "img": ""}},
+        )
+
+    def test_skill_with_img_and_url(self):
+        self.assertEqual(
+            extract_skills_from_text("Used [React]{react.svg}(https://react.dev)"),
+            {"React": {"url": "https://react.dev", "img": "react.svg"}},
+        )
+
+    def test_multiple_skills_merged(self):
+        text = "Worked with [AWS] and [AWS] S3. [AWS](https://aws.amazon.com) is great."
+        result = extract_skills_from_text(text)
+        self.assertIn("AWS", result)
+        self.assertEqual(result["AWS"]["url"], "https://aws.amazon.com")
+
+    def test_preserves_first_url(self):
+        text = "[Python](https://first.com) and [Python](https://second.com)"
+        result = extract_skills_from_text(text)
+        self.assertEqual(result["Python"]["url"], "https://first.com")
+
+
+class TestGetLlmProvider(unittest.TestCase):
+    """Test parsers.get_llm_provider with patched env (no real API key)."""
+
+    def test_returns_anthropic_when_key_set(self):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}, clear=False):
+            self.assertEqual(get_llm_provider(), "anthropic")
+
+    def test_raises_when_no_key(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(RuntimeError) as ctx:
+                get_llm_provider()
+            self.assertIn("ANTHROPIC_API_KEY", str(ctx.exception))
+            self.assertIn("LLM_PROVIDER", str(ctx.exception))
+
+    def test_llm_provider_anthropic_requires_key(self):
+        with patch.dict(os.environ, {"LLM_PROVIDER": "anthropic"}, clear=True):
+            with self.assertRaises(RuntimeError) as ctx:
+                get_llm_provider()
+            self.assertIn("ANTHROPIC_API_KEY", str(ctx.exception))
+
+    def test_llm_provider_anthropic_with_key(self):
+        with patch.dict(
+            os.environ,
+            {"LLM_PROVIDER": "anthropic", "ANTHROPIC_API_KEY": "sk-ant-test"},
+            clear=True,
+        ):
+            self.assertEqual(get_llm_provider(), "anthropic")
+
+
+class TestExtractText(unittest.TestCase):
+    """Test extractors.extract_text with mocked docx/pdf (no real files)."""
+
+    def test_unsupported_format_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            extract_text(Path("/fake/resume.txt"))
+        self.assertIn("Unsupported", str(ctx.exception))
+
+    @patch("extractors._extract_docx")
+    def test_docx_calls_extract_docx(self, mock_extract):
+        mock_extract.return_value = "Resume text here"
+        result = extract_text(Path("/fake/resume.docx"))
+        self.assertEqual(result, "Resume text here")
+        mock_extract.assert_called_once()
+
+    @patch("extractors._extract_pdf")
+    def test_pdf_calls_extract_pdf(self, mock_extract):
+        mock_extract.return_value = "PDF content here"
+        result = extract_text(Path("/fake/resume.pdf"))
+        self.assertEqual(result, "PDF content here")
+        mock_extract.assert_called_once()
+
+
+class TestExtractDocxBody(unittest.TestCase):
+    """Test extractors._extract_docx body (mocked Document)."""
+
+    @patch("docx.Document")
+    def test_extract_docx_paragraphs_and_tables(self, mock_document_cls):
+        mock_para = MagicMock()
+        mock_para.text = "  Hello World  "
+        mock_para2 = MagicMock()
+        mock_para2.text = "Section two"
+        mock_doc = MagicMock()
+        mock_doc.paragraphs = [mock_para, mock_para2]
+        mock_row = MagicMock()
+        mock_row.cells = [MagicMock(text="A"), MagicMock(text="B")]
+        mock_table = MagicMock()
+        mock_table.rows = [mock_row]
+        mock_doc.tables = [mock_table]
+        mock_document_cls.return_value = mock_doc
+
+        from extractors import _extract_docx
+        result = _extract_docx(Path("/fake/file.docx"))
+        self.assertIn("Hello World", result)
+        self.assertIn("Section two", result)
+        self.assertIn("A | B", result)
+        mock_document_cls.assert_called_once_with(Path("/fake/file.docx"))
+
+    @patch("docx.Document")
+    def test_extract_docx_skips_empty_paragraphs(self, mock_document_cls):
+        mock_doc = MagicMock()
+        mock_doc.paragraphs = [MagicMock(text="  "), MagicMock(text="Ok")]
+        mock_doc.tables = []
+        mock_document_cls.return_value = mock_doc
+        from extractors import _extract_docx
+        result = _extract_docx(Path("/fake/file.docx"))
+        self.assertEqual(result, "Ok")
+
+
+class TestExtractPdfBody(unittest.TestCase):
+    """Test extractors._extract_pdf body (mocked pdfplumber)."""
+
+    def test_extract_pdf_pages(self):
+        mock_page1 = MagicMock()
+        mock_page1.extract_text.return_value = "Page one text"
+        mock_page2 = MagicMock()
+        mock_page2.extract_text.return_value = "Page two"
+        mock_pdf = MagicMock()
+        mock_pdf.pages = [mock_page1, mock_page2]
+        mock_open = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_pdf
+        mock_open.return_value.__exit__.return_value = None
+        mock_pdfplumber = MagicMock()
+        mock_pdfplumber.open = mock_open
+        with patch.dict("sys.modules", {"pdfplumber": mock_pdfplumber}):
+            from extractors import _extract_pdf
+            result = _extract_pdf(Path("/fake/file.pdf"))
+        self.assertIn("Page one text", result)
+        self.assertIn("Page two", result)
+
+    def test_extract_pdf_skips_none_text(self):
+        mock_pdf = MagicMock()
+        mock_pdf.pages = [
+            MagicMock(extract_text=MagicMock(return_value=None)),
+            MagicMock(extract_text=MagicMock(return_value="Only this")),
+        ]
+        mock_open = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_pdf
+        mock_open.return_value.__exit__.return_value = None
+        mock_pdfplumber = MagicMock()
+        mock_pdfplumber.open = mock_open
+        with patch.dict("sys.modules", {"pdfplumber": mock_pdfplumber}):
+            from extractors import _extract_pdf
+            result = _extract_pdf(Path("/fake/file.pdf"))
+        self.assertEqual(result, "Only this")
+
+
+class TestHexToRgb(unittest.TestCase):
+    """Test parsers._hex_to_rgb."""
+
+    def test_hex_to_rgb(self):
+        self.assertEqual(_hex_to_rgb("#ff0000"), (255, 0, 0))
+        self.assertEqual(_hex_to_rgb("#00FF00"), (0, 255, 0))
+        self.assertEqual(_hex_to_rgb("116611"), (17, 102, 17))
+
+
+class TestCssNameFromHex(unittest.TestCase):
+    """Test parsers._css_name_from_hex."""
+
+    def test_mapped_colors(self):
+        self.assertEqual(_css_name_from_hex("#116611"), "darkforest")
+        self.assertEqual(_css_name_from_hex("#0069AC"), "darkcyan")
+        self.assertEqual(_css_name_from_hex("#ffa500"), "orange")
+
+    def test_unmapped_returns_darkgreen(self):
+        self.assertEqual(_css_name_from_hex("#abcdef"), "darkgreen")
+
+
+class TestNormalizeDate(unittest.TestCase):
+    """Test parsers._normalize_date and _normalize_end_date."""
+
+    def test_normalize_date_empty_none(self):
+        self.assertEqual(_normalize_date(None), "")
+        self.assertEqual(_normalize_date(""), "")
+
+    def test_normalize_date_current_date(self):
+        self.assertEqual(_normalize_date("CURRENT_DATE"), "CURRENT_DATE")
+        self.assertEqual(_normalize_date("  current_date  "), "CURRENT_DATE")
+
+    def test_normalize_date_iso(self):
+        self.assertEqual(_normalize_date("2024-08-01"), "2024-08-01")
+        self.assertEqual(_normalize_date("2024-08-01T00:00:00"), "2024-08-01")
+
+    def test_normalize_date_passthrough(self):
+        self.assertEqual(_normalize_date("Aug 2024"), "Aug 2024")
+
+    def test_normalize_end_date_present_current(self):
+        self.assertEqual(_normalize_end_date("PRESENT"), "CURRENT_DATE")
+        self.assertEqual(_normalize_end_date("Current"), "CURRENT_DATE")
+        self.assertEqual(_normalize_end_date("CURRENT"), "CURRENT_DATE")
+
+    def test_normalize_end_date_iso(self):
+        self.assertEqual(_normalize_end_date("2023-12-31"), "2023-12-31")
+
+
+class TestJobsToFlockFormat(unittest.TestCase):
+    """Test parsers.jobs_to_flock_format."""
+
+    def test_empty_list(self):
+        self.assertEqual(jobs_to_flock_format([]), [])
+
+    def test_single_job(self):
+        jobs = [{"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "description": "Did stuff."}]
+        out = jobs_to_flock_format(jobs)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["index"], 0)
+        self.assertEqual(out[0]["role"], "Engineer")
+        self.assertEqual(out[0]["employer"], "Acme")
+        self.assertEqual(out[0]["start"], "2020-01-01")
+        self.assertEqual(out[0]["end"], "CURRENT_DATE")
+        self.assertEqual(out[0]["Description"], "Did stuff.")
+        self.assertIn(out[0]["css name"], ("darkforest", "darkgreen"))
+        self.assertEqual(out[0]["z-index"], 1)
+
+    def test_multiple_jobs_rotation(self):
+        jobs = [{"role": "A", "employer": "E1", "start": "", "end": "", "description": ""}] * 2
+        out = jobs_to_flock_format(jobs)
+        self.assertEqual(out[0]["z-index"], 1)
+        self.assertEqual(out[1]["z-index"], 2)
+
+
+class TestParseJobsWithLlm(unittest.TestCase):
+    """Test parsers.parse_jobs_with_llm with mocked _call_llm."""
+
+    @patch("parsers._call_llm")
+    def test_returns_jobs_from_json(self, mock_call_llm):
+        mock_call_llm.return_value = '{"jobs": [{"role": "Dev", "employer": "Co", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"}]}'
+        result = parse_jobs_with_llm("resume text")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["role"], "Dev")
+        self.assertEqual(result[0]["employer"], "Co")
+
+    @patch("parsers._call_llm")
+    def test_strips_markdown_code_blocks(self, mock_call_llm):
+        mock_call_llm.return_value = '```json\n{"jobs": [{"role": "R", "employer": "E", "start": "", "end": "", "description": ""}]}\n```'
+        result = parse_jobs_with_llm("x")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["role"], "R")
+
+    @patch("parsers._call_llm")
+    def test_empty_jobs_key_returns_empty_list(self, mock_call_llm):
+        mock_call_llm.return_value = "{}"
+        result = parse_jobs_with_llm("x")
+        self.assertEqual(result, [])
+
+
+class TestEnrichSkillsWithLlm(unittest.TestCase):
+    """Test parsers.enrich_skills_with_llm with mocked LLM."""
+
+    def test_returns_unchanged_when_no_provider(self):
+        with patch("parsers._llm_provider") as mock_provider:
+            mock_provider.side_effect = RuntimeError("no key")
+            skills = {"Python": {"url": "", "img": ""}}
+            result = enrich_skills_with_llm(skills)
+            self.assertEqual(result, skills)
+
+    def test_returns_unchanged_when_no_skills_need_url(self):
+        with patch("parsers._llm_provider"), patch("parsers._call_llm") as mock_call:
+            skills = {"Python": {"url": "https://python.org", "img": ""}}
+            result = enrich_skills_with_llm(skills)
+            mock_call.assert_not_called()
+            self.assertEqual(result, skills)
+
+    @patch("parsers._call_llm")
+    def test_updates_url_from_suggestions(self, mock_call_llm):
+        with patch("parsers._llm_provider"):
+            mock_call_llm.return_value = '{"suggestions": [{"name": "Python", "url": "https://python.org"}]}'
+            skills = {"Python": {"url": "", "img": ""}}
+            result = enrich_skills_with_llm(skills)
+            self.assertEqual(result["Python"]["url"], "https://python.org")
+
+    @patch("parsers._call_llm")
+    def test_keeps_skills_on_llm_failure(self, mock_call_llm):
+        with patch("parsers._llm_provider"):
+            mock_call_llm.side_effect = Exception("API error")
+            skills = {"X": {"url": "", "img": ""}}
+            result = enrich_skills_with_llm(skills)
+            self.assertEqual(result["X"]["url"], "")
+
+
+if __name__ == "__main__":
+    unittest.main()
