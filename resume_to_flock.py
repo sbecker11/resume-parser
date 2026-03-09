@@ -323,6 +323,7 @@ def main() -> int:
     }
 
     # Copy original resume into output folder (original filename)
+    out_dir.mkdir(parents=True, exist_ok=True)
     resume_copy_path = out_dir / args.resume.name
     shutil.copy2(args.resume, resume_copy_path)
 
