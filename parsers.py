@@ -103,6 +103,57 @@ Rules:
     return data.get("jobs", [])
 
 
+def parse_resume_sections(raw_text: str) -> dict[str, Any]:
+    """
+    Use LLM to extract contact, summary, certifications, skills section, and other sections
+    (everything except work/education jobs). Returns a dict suitable for JSON.
+    """
+    system_prompt = """You are a resume parser. Extract everything that is NOT work experience or education.
+Output valid JSON only, no markdown or explanation. Use this exact schema:
+{
+  "contact": {
+    "name": "string or empty",
+    "email": "string or empty",
+    "phone": "string or empty",
+    "location": "string or empty",
+    "linkedin": "string or empty",
+    "website": "string or empty"
+  },
+  "title": "string (professional title / headline, e.g. Data Engineer, Full Stack Developer; empty if absent)",
+  "summary": "string (professional summary / objective; empty if absent)",
+  "certifications": [ { "name": "string", "issuer": "string or empty", "date": "string or empty" } ],
+  "skills": [ "string" ],
+  "other_sections": [ { "title": "string (section heading)", "content": "string" } ]
+}
+Rules:
+- contact: fill only the fields present in the resume; use "" for missing.
+- title: the resume headline or professional title (often under the name).
+- summary: the main summary/objective paragraph.
+- certifications: list each certification with name; add issuer and date if present.
+- skills: the explicit skills list (e.g. "Skills" section); do not duplicate technologies from job descriptions.
+- other_sections: any other sections (e.g. Publications, Patents, Volunteer, Awards, Languages). Use title for the section heading and content for the body text.
+- If a section is absent, use empty string or empty array as appropriate.
+"""
+
+    user_prompt = f"Extract contact, summary, certifications, skills, and other sections from this resume (exclude work experience and education):\n\n{raw_text}"
+    text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
+
+    if "```" in text:
+        text = re.sub(r"```(?:json)?\s*", "", text)
+        text = re.sub(r"```\s*$", "", text)
+    data = json.loads(text.strip())
+
+    # Normalize to expected keys
+    return {
+        "contact": data.get("contact") or {},
+        "title": data.get("title") or "",
+        "summary": data.get("summary") or "",
+        "certifications": data.get("certifications") or [],
+        "skills": data.get("skills") or [],
+        "other_sections": data.get("other_sections") or [],
+    }
+
+
 def extract_skills_from_text(text: str) -> dict[str, dict[str, str]]:
     """
     Extract skills from text using [text]{img}(url) pattern.
@@ -165,6 +216,108 @@ Skills: {json.dumps(skills_needing_url)}
         pass  # Keep original skills on failure
 
     return skills
+
+
+def categorize_skills_with_llm(skills: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """
+    Use LLM to assign each skill a list of categories (e.g. Programming Language, Framework, Cloud).
+    Adds "categories": [...] to each skill; uses [] if LLM unavailable or on failure.
+    """
+    for data in skills.values():
+        data.setdefault("categories", [])
+
+    try:
+        _llm_provider()
+    except RuntimeError:
+        return skills
+
+    if not skills:
+        return skills
+
+    names = list(skills.keys())
+    system_prompt = "Output valid JSON only, no markdown or explanation."
+    user_prompt = f"""Assign each of these skills/technologies to one or more categories. Use short, consistent category names (e.g. "Programming Language", "Framework", "Cloud", "Database", "Tool", "Library", "Methodology", "Data Science", "DevOps", "Frontend", "Backend").
+Output valid JSON only:
+{{ "categories": {{ "SkillName": ["Category1", "Category2"], ... }} }}
+
+Each key must be exactly one of the skill names below. Use an empty array [] if a skill doesn't fit any category.
+Skills: {json.dumps(names)}
+"""
+
+    try:
+        text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
+        if "```" in text:
+            text = re.sub(r"```(?:json)?\s*", "", text)
+            text = re.sub(r"```\s*$", "", text)
+        data = json.loads(text.strip())
+        cat_map = data.get("categories") or data
+        if not isinstance(cat_map, dict):
+            return skills
+        for name in skills:
+            raw = cat_map.get(name)
+            if isinstance(raw, list):
+                skills[name]["categories"] = [str(c).strip() for c in raw if str(c).strip()]
+            else:
+                skills[name]["categories"] = []
+    except Exception:
+        for data in skills.values():
+            data["categories"] = data.get("categories") or []
+
+    return skills
+
+
+def _slugify(s: str) -> str:
+    """Stable slug for category ID: lowercase, alphanumeric and single hyphens."""
+    s = re.sub(r"[^a-z0-9]+", "-", s.lower().strip()).strip("-")
+    return s or "other"
+
+
+def build_categories_dict(skills: dict[str, dict[str, Any]]) -> dict[str, dict[str, str]]:
+    """
+    Build a categories dict with unique categoryIDs from skills' category names.
+    Mutates each skill: adds "categoryIDs": [id, ...] and removes "categories" (names live only in categories dict).
+    Returns categories = { categoryID: { "name": "Display Name" } }.
+    """
+    name_to_id: dict[str, str] = {}
+    categories: dict[str, dict[str, str]] = {}
+    for data in skills.values():
+        for name in (data.get("categories") or []):
+            name = str(name).strip()
+            if not name:
+                continue
+            cid = name_to_id.get(name)
+            if cid is None:
+                cid = _slugify(name)
+                if cid in categories:
+                    base, n = cid, 1
+                    while cid in categories:
+                        cid = f"{base}-{n}"
+                        n += 1
+                name_to_id[name] = cid
+                categories[cid] = {"name": name}
+    for data in skills.values():
+        names = data.get("categories") or []
+        data["categoryIDs"] = [name_to_id[n] for n in names if n in name_to_id]
+        data.pop("categories", None)
+    return categories
+
+
+def assign_skill_ids(skills: dict[str, dict[str, Any]]) -> None:
+    """
+    Assign a unique "id" (slug) to each skill in place.
+    Enables jobs to reference skills via skillIDs; IDs are URL-safe and stable.
+    """
+    used: set[str] = set()
+    for name, data in skills.items():
+        base = _slugify(name) or "skill"
+        sid = base
+        n = 1
+        while sid in used:
+            sid = f"{base}-{n}"
+            n += 1
+        used.add(sid)
+        data["id"] = sid
+    return
 
 
 def jobs_to_flock_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:

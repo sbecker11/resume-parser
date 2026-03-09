@@ -5,19 +5,16 @@ RESUME_NAME="Shawn_Becker_Full_Stack_Developer_AI_ML_Engineer.docx"
 RESUME_FILE="$RESUME_DIR/$RESUME_NAME"
 FLOCK_STATIC="/Users/sbecker11/workspace-flock/resume-flock/static_content"
 
-# backup existing mjs files (jobs and skills)
+# backup existing output files (jobs.mjs, skills.mjs, other-sections.mjs, resume.html, resume_template.html)
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
-for subdir in jobs skills; do
-  dir="$FLOCK_STATIC/$subdir"
-  if [[ -d "$dir" ]]; then
-    mkdir -p "$dir/backups"
-    for file in "$dir"/*.mjs; do
-      [[ -f "$file" ]] && mv "$file" "$dir/backups/$(basename $file).$TIMESTAMP"
-    done
+mkdir -p "$FLOCK_STATIC/backups"
+for f in jobs.mjs skills.mjs categories.mjs other-sections.mjs resume.html resume_template.html; do
+  if [[ -f "$FLOCK_STATIC/$f" ]]; then
+    mv "$FLOCK_STATIC/$f" "$FLOCK_STATIC/backups/$f.$TIMESTAMP"
   fi
 done
 
-# create new mjs files (writes to static_content/jobs/ and static_content/skills/)
+# create new output files (jobs.mjs, skills.mjs, other-sections.mjs, resume.html, resume_template.html)
 cd "$(dirname "$0")/.."
 # --provider openai (commented out; Anthropic only)
 python resume_to_flock.py "$RESUME_FILE" -o "$FLOCK_STATIC"

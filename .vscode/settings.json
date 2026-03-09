@@ -2,7 +2,6 @@
     "liveServer.settings.port": 5501,
     "CodeGPT.Autocomplete.enabled": false,
     "CodeGPT.apiKey": "CodeGPT Plus",
-    "OPENAI_API_KEY": "sk-08b0c8aa-8e20-4cf1-a2b2-341194fb28a3",
     "python.testing.unittestArgs": [
         "-v",
         "-s",

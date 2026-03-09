@@ -13,7 +13,11 @@ from parsers import (
     get_llm_provider,
     jobs_to_flock_format,
     enrich_skills_with_llm,
+    categorize_skills_with_llm,
+    build_categories_dict,
+    assign_skill_ids,
     parse_jobs_with_llm,
+    parse_resume_sections,
     _hex_to_rgb,
     _css_name_from_hex,
     _normalize_date,
@@ -285,6 +289,41 @@ class TestParseJobsWithLlm(unittest.TestCase):
         self.assertEqual(result, [])
 
 
+class TestParseResumeSections(unittest.TestCase):
+    """Test parsers.parse_resume_sections with mocked _call_llm."""
+
+    @patch("parsers._call_llm")
+    def test_returns_normalized_dict(self, mock_call_llm):
+        mock_call_llm.return_value = '''{
+          "contact": { "name": "Jane", "email": "j@example.com", "phone": "", "location": "", "linkedin": "", "website": "" },
+          "title": "Data Engineer",
+          "summary": "Data engineer.",
+          "certifications": [ { "name": "AWS CPA", "issuer": "AWS", "date": "2023" } ],
+          "skills": [ "Python", "SQL" ],
+          "other_sections": [ { "title": "Publications", "content": "Paper 1." } ]
+        }'''
+        result = parse_resume_sections("resume text")
+        self.assertEqual(result["contact"]["name"], "Jane")
+        self.assertEqual(result["contact"]["email"], "j@example.com")
+        self.assertEqual(result["title"], "Data Engineer")
+        self.assertEqual(result["summary"], "Data engineer.")
+        self.assertEqual(len(result["certifications"]), 1)
+        self.assertEqual(result["certifications"][0]["name"], "AWS CPA")
+        self.assertEqual(result["skills"], ["Python", "SQL"])
+        self.assertEqual(len(result["other_sections"]), 1)
+        self.assertEqual(result["other_sections"][0]["title"], "Publications")
+
+    @patch("parsers._call_llm")
+    def test_strips_markdown_and_normalizes_missing_keys(self, mock_call_llm):
+        mock_call_llm.return_value = '```json\n{"contact": {}, "summary": "Hi"}\n```'
+        result = parse_resume_sections("x")
+        self.assertEqual(result["summary"], "Hi")
+        self.assertEqual(result["title"], "")
+        self.assertEqual(result["certifications"], [])
+        self.assertEqual(result["skills"], [])
+        self.assertEqual(result["other_sections"], [])
+
+
 class TestEnrichSkillsWithLlm(unittest.TestCase):
     """Test parsers.enrich_skills_with_llm with mocked LLM."""
 
@@ -317,6 +356,83 @@ class TestEnrichSkillsWithLlm(unittest.TestCase):
             skills = {"X": {"url": "", "img": ""}}
             result = enrich_skills_with_llm(skills)
             self.assertEqual(result["X"]["url"], "")
+
+
+class TestCategorizeSkillsWithLlm(unittest.TestCase):
+    """Test parsers.categorize_skills_with_llm with mocked LLM."""
+
+    def test_adds_empty_categories_when_no_provider(self):
+        with patch("parsers._llm_provider") as mock_provider:
+            mock_provider.side_effect = RuntimeError("no key")
+            skills = {"Python": {"url": "", "img": ""}}
+            result = categorize_skills_with_llm(skills)
+            self.assertEqual(result["Python"]["categories"], [])
+
+    @patch("parsers._call_llm")
+    def test_assigns_categories_from_llm(self, mock_call_llm):
+        with patch("parsers._llm_provider"):
+            mock_call_llm.return_value = '{"categories": {"Python": ["Programming Language"], "React": ["Framework", "Frontend"]}}'
+            skills = {"Python": {"url": "", "img": ""}, "React": {"url": "", "img": ""}}
+            result = categorize_skills_with_llm(skills)
+            self.assertEqual(result["Python"]["categories"], ["Programming Language"])
+            self.assertEqual(result["React"]["categories"], ["Framework", "Frontend"])
+
+    @patch("parsers._call_llm")
+    def test_uses_empty_list_on_llm_failure(self, mock_call_llm):
+        with patch("parsers._llm_provider"):
+            mock_call_llm.side_effect = Exception("API error")
+            skills = {"X": {"url": "", "img": ""}}
+            result = categorize_skills_with_llm(skills)
+            self.assertEqual(result["X"]["categories"], [])
+
+
+class TestBuildCategoriesDict(unittest.TestCase):
+    """Test parsers.build_categories_dict."""
+
+    def test_builds_ids_and_adds_categoryIDs_to_skills(self):
+        skills = {
+            "Python": {"url": "", "img": "", "categories": ["Programming Language"]},
+            "React": {"url": "", "img": "", "categories": ["Framework", "Frontend"]},
+            "SQL": {"url": "", "img": "", "categories": ["Programming Language"]},
+        }
+        categories = build_categories_dict(skills)
+        self.assertIn("programming-language", categories)
+        self.assertEqual(categories["programming-language"]["name"], "Programming Language")
+        self.assertIn("framework", categories)
+        self.assertIn("frontend", categories)
+        self.assertEqual(skills["Python"]["categoryIDs"], ["programming-language"])
+        self.assertEqual(set(skills["React"]["categoryIDs"]), {"framework", "frontend"})
+        self.assertEqual(skills["SQL"]["categoryIDs"], ["programming-language"])
+
+    def test_skill_with_no_categories_gets_empty_categoryIDs(self):
+        skills = {"X": {"url": "", "img": "", "categories": []}}
+        categories = build_categories_dict(skills)
+        self.assertEqual(skills["X"]["categoryIDs"], [])
+        self.assertEqual(categories, {})
+
+
+class TestAssignSkillIds(unittest.TestCase):
+    """Test parsers.assign_skill_ids."""
+
+    def test_adds_unique_slug_id_to_each_skill(self):
+        skills = {
+            "Python": {"url": "", "img": "", "jobIDs": [0], "categoryIDs": []},
+            "React": {"url": "", "img": "", "jobIDs": [], "categoryIDs": []},
+        }
+        assign_skill_ids(skills)
+        self.assertEqual(skills["Python"]["id"], "python")
+        self.assertEqual(skills["React"]["id"], "react")
+
+    def test_collision_gets_suffix(self):
+        skills = {
+            "react": {"url": "", "img": "", "jobIDs": []},
+            "React": {"url": "", "img": "", "jobIDs": []},
+        }
+        assign_skill_ids(skills)
+        ids = [skills["react"]["id"], skills["React"]["id"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertIn("react", ids)
+        self.assertTrue(any(s.startswith("react-") for s in ids))
 
 
 if __name__ == "__main__":
