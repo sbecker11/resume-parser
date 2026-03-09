@@ -14,6 +14,7 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -321,12 +322,17 @@ def main() -> int:
         for name, data in skills.items()
     }
 
+    # Copy original resume into output folder (original filename)
+    resume_copy_path = out_dir / args.resume.name
+    shutil.copy2(args.resume, resume_copy_path)
+
     # Write output: jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs, resume.html, resume_template.html
     jobs_path = _write_jobs_mjs(jobs_by_id, out_dir)
     skills_path = _write_skills_mjs(skills_by_id, out_dir)
     categories_path = _write_categories_mjs(categories, out_dir)
     other_path = _write_other_sections_mjs(resume_meta, out_dir)
     resume_path, template_path = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
+    print(f"Copied {resume_copy_path}")
     print(f"Wrote {jobs_path}")
     print(f"Wrote {skills_path}")
     print(f"Wrote {categories_path}")

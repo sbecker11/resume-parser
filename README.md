@@ -36,7 +36,7 @@ python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
 
 ## Output
 
-All files are written in the output folder (no subfolders).
+All files are written in the output folder (no subfolders). The output folder also includes a copy of the original resume file (DOCX or PDF) under its **original filename**.
 
 **Data model (consistent across the three dicts):**
 

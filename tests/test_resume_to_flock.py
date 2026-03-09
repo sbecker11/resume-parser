@@ -215,6 +215,13 @@ class TestMain(unittest.TestCase):
                                             with patch("builtins.print"):
                                                 result = main()
                 self.assertEqual(result, 0)
+                # Original resume copied into output folder with original filename
+                resume_copy = out_dir / Path(resume_path).name
+                self.assertTrue(resume_copy.exists(), f"Expected copy {resume_copy}")
+                orig_size = Path(resume_path).stat().st_size
+                copy_size = resume_copy.stat().st_size
+                self.assertEqual(copy_size, orig_size, f"Copy file size {copy_size} should match original {orig_size}")
+                self.assertEqual(resume_copy.read_bytes(), Path(resume_path).read_bytes(), "Copy should match original")
                 self.assertTrue((out_dir / "jobs.mjs").exists())
                 self.assertTrue((out_dir / "skills.mjs").exists())
                 self.assertTrue((out_dir / "categories.mjs").exists())
