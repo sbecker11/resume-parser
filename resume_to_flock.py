@@ -325,7 +325,9 @@ def main() -> int:
     # Copy original resume into output folder (original filename)
     out_dir.mkdir(parents=True, exist_ok=True)
     resume_copy_path = out_dir / args.resume.name
-    shutil.copy2(args.resume, resume_copy_path)
+    # Only copy if source and destination are different (avoid SameFileError)
+    if args.resume.resolve() != resume_copy_path.resolve():
+        shutil.copy2(args.resume, resume_copy_path)
 
     # Write output: jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs, resume.html, resume_template.html
     jobs_path = _write_jobs_mjs(jobs_by_id, out_dir)
