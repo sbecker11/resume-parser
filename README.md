@@ -20,6 +20,8 @@ ANTHROPIC_API_KEY=your-anthropic-key-here
 
 ## Usage
 
+Provide the path to your resume file (DOCX or PDF); there is no project `resumes/` folder.
+
 ```bash
 python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
 
