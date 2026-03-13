@@ -16,9 +16,9 @@ SKILL_PATTERN = re.compile(r"\[([^\]]+)\](?:\{([^\}]+)\})?(?:\(([^\)]+)\))?")
 # Match "Prefix (item1, item2, ...)" for expanding into "Prefix item1", "Prefix item2", ...
 _PAREN_SKILL_PATTERN = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*$")
 # In text: "Name (a,b,c)" as substring — replace with "Name a, Name b, Name c".
-# Name = word(s) immediately before " ("; use two patterns so we get "AWS" not "Used AWS"
-_PAREN_SKILL_AT_START = re.compile(r"^(\w+(?:\s+\w+)*)\s*\(([^)]+)\)", re.MULTILINE)
-_PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)(\w+(?:\s+\w+)*)\s*\(([^)]+)\)")
+# Name = token(s) immediately before " ("; allow / and - (e.g. CI/CD, AWS)
+_PAREN_SKILL_AT_START = re.compile(r"^([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)", re.MULTILINE)
+_PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)")
 
 
 def expand_skill_parens(name: str) -> list[str]:

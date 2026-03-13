@@ -126,6 +126,12 @@ class TestExpandParensInText(unittest.TestCase):
         self.assertEqual(spaced, "Used Name a, Name b, Name c here.")
         self.assertEqual(no_space, spaced)
 
+    def test_prefix_with_slash_expands(self):
+        """CI/CD (GitHub Actions, Jenkins) expands to CI/CD GitHub Actions, CI/CD Jenkins."""
+        result = expand_parens_in_text("Used CI/CD (GitHub Actions, Jenkins) for pipelines.")
+        self.assertEqual(result, "Used CI/CD GitHub Actions, CI/CD Jenkins for pipelines.")
+        self.assertEqual(expand_skill_parens("CI/CD (GitHub Actions, Jenkins)"), ["CI/CD GitHub Actions", "CI/CD Jenkins"])
+
 
 class TestGetLlmProvider(unittest.TestCase):
     """Test parsers.get_llm_provider with patched env (no real API key)."""
