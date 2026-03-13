@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 from extractors import extract_text
 from parsers import (
     extract_skills_from_text,
+    expand_skill_parens,
+    expand_parens_in_text,
     get_llm_provider,
     jobs_to_flock_format,
     enrich_skills_with_llm,
@@ -62,6 +64,67 @@ class TestExtractSkillsFromText(unittest.TestCase):
         text = "[Python](https://first.com) and [Python](https://second.com)"
         result = extract_skills_from_text(text)
         self.assertEqual(result["Python"]["url"], "https://first.com")
+
+    def test_paren_skill_expanded(self):
+        text = "Used [AWS (S3, EC2, Lambda)](https://aws.amazon.com) for infra."
+        result = extract_skills_from_text(text)
+        self.assertIn("AWS S3", result)
+        self.assertIn("AWS EC2", result)
+        self.assertIn("AWS Lambda", result)
+        self.assertEqual(result["AWS S3"]["url"], "https://aws.amazon.com")
+        self.assertEqual(len(result), 3)
+
+
+class TestExpandSkillParens(unittest.TestCase):
+    """Test parsers.expand_skill_parens."""
+
+    def test_no_parens_returns_single(self):
+        self.assertEqual(expand_skill_parens("Python"), ["Python"])
+
+    def test_parens_expanded(self):
+        self.assertEqual(
+            expand_skill_parens("AWS (S3, EC2, Lambda, Glue)"),
+            ["AWS S3", "AWS EC2", "AWS Lambda", "AWS Glue"],
+        )
+
+    def test_empty_or_whitespace(self):
+        self.assertEqual(expand_skill_parens(""), [])
+        self.assertEqual(expand_skill_parens("   "), [])
+
+    def test_single_item_in_parens(self):
+        self.assertEqual(expand_skill_parens("Cloud (GCP)"), ["Cloud GCP"])
+
+    def test_no_space_and_spaced_return_same_set(self):
+        """Name(a,b,c) and Name (a, b, c) should return the same set of pairs."""
+        no_space = set(expand_skill_parens("Name(a,b,c)"))
+        spaced = set(expand_skill_parens("Name (a, b, c)"))
+        self.assertEqual(no_space, spaced)
+        self.assertEqual(no_space, {"Name a", "Name b", "Name c"})
+
+
+class TestExpandParensInText(unittest.TestCase):
+    """Test parsers.expand_parens_in_text (in-description replacement)."""
+
+    def test_replaces_parens_with_comma_separated(self):
+        self.assertEqual(
+            expand_parens_in_text("Used AWS (S3, EC2, Lambda) for infra."),
+            "Used AWS S3, AWS EC2, AWS Lambda for infra.",
+        )
+
+    def test_empty_unchanged(self):
+        self.assertEqual(expand_parens_in_text(""), "")
+        self.assertEqual(expand_parens_in_text("   "), "   ")
+
+    def test_no_parens_unchanged(self):
+        self.assertEqual(expand_parens_in_text("Just Python and Java."), "Just Python and Java.")
+
+    def test_no_space_after_name_expands_same_as_spaced(self):
+        """Name(a,b,c) and Name (a, b, c) in text both expand to Name a, Name b, Name c."""
+        no_space = expand_parens_in_text("Used Name(a,b,c) here.")
+        spaced = expand_parens_in_text("Used Name (a, b, c) here.")
+        self.assertEqual(no_space, "Used Name a, Name b, Name c here.")
+        self.assertEqual(spaced, "Used Name a, Name b, Name c here.")
+        self.assertEqual(no_space, spaced)
 
 
 class TestGetLlmProvider(unittest.TestCase):
@@ -262,6 +325,14 @@ class TestJobsToFlockFormat(unittest.TestCase):
         out = jobs_to_flock_format(jobs)
         self.assertEqual(out[0]["z-index"], 1)
         self.assertEqual(out[1]["z-index"], 2)
+
+    def test_description_expands_parens(self):
+        # Expansion is done before jobs_to_flock_format (e.g. in resume_to_flock)
+        jobs = [{"role": "Dev", "employer": "Co", "start": "", "end": "", "description": "Used AWS (S3, EC2, Lambda) for infra."}]
+        for job in jobs:
+            job["description"] = expand_parens_in_text((job.get("description") or "").strip())
+        out = jobs_to_flock_format(jobs)
+        self.assertEqual(out[0]["Description"], "Used AWS S3, AWS EC2, AWS Lambda for infra.")
 
 
 class TestParseJobsWithLlm(unittest.TestCase):

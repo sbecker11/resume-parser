@@ -13,6 +13,62 @@ from typing import Any
 # Matches: [SkillName], [SkillName](url), [SkillName]{img}(url)
 SKILL_PATTERN = re.compile(r"\[([^\]]+)\](?:\{([^\}]+)\})?(?:\(([^\)]+)\))?")
 
+# Match "Prefix (item1, item2, ...)" for expanding into "Prefix item1", "Prefix item2", ...
+_PAREN_SKILL_PATTERN = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*$")
+# In text: "Name (a,b,c)" as substring — replace with "Name a, Name b, Name c".
+# Name = word(s) immediately before " ("; use two patterns so we get "AWS" not "Used AWS"
+_PAREN_SKILL_AT_START = re.compile(r"^(\w+(?:\s+\w+)*)\s*\(([^)]+)\)", re.MULTILINE)
+_PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)(\w+(?:\s+\w+)*)\s*\(([^)]+)\)")
+
+
+def expand_skill_parens(name: str) -> list[str]:
+    """
+    If name is "Prefix (a, b, c)", return ["Prefix a", "Prefix b", "Prefix c"].
+    Otherwise return [name].
+    """
+    name = (name or "").strip()
+    if not name:
+        return []
+    m = _PAREN_SKILL_PATTERN.match(name)
+    if not m:
+        return [name]
+    prefix = m.group(1).strip()
+    if not prefix:
+        return [name]
+    items = [x.strip() for x in m.group(2).split(",") if x.strip()]
+    if not items:
+        return [name]
+    return [f"{prefix} {item}" for item in items]
+
+
+def expand_parens_in_text(text: str) -> str:
+    """
+    In the original input string, replace each "Name (a,b,c)" with "Name a, Name b, Name c".
+    """
+    if not text or not text.strip():
+        return text
+
+    def repl_start(m: re.Match) -> str:
+        prefix = m.group(1).strip()
+        items = [x.strip() for x in m.group(2).split(",") if x.strip()]
+        if not prefix or not items:
+            return m.group(0)
+        return ", ".join(f"{prefix} {item}" for item in items)
+
+    def repl_after(m: re.Match) -> str:
+        space = m.group(1)
+        prefix = m.group(2).strip()
+        items = [x.strip() for x in m.group(3).split(",") if x.strip()]
+        if not prefix or not items:
+            return m.group(0)
+        return space + ", ".join(f"{prefix} {item}" for item in items)
+
+    # After-space first so "Used AWS (S3,...)" → "Used AWS S3, ..." (prefix "AWS"); then start-of-string
+    text = _PAREN_SKILL_AFTER_SPACE.sub(repl_after, text)
+    text = _PAREN_SKILL_AT_START.sub(repl_start, text)
+    return text
+
+
 # Default color palette for bizcards (hex RGB)
 DEFAULT_PALETTE = [
     "#116611", "#0069AC", "#006688", "#0000ff", "#4400cd", "#8a2be2",
@@ -169,13 +225,15 @@ def extract_skills_from_text(text: str) -> dict[str, dict[str, str]]:
         if not name:
             continue
 
-        if name not in skills:
-            skills[name] = {"url": "", "img": ""}
-
-        if url and not skills[name]["url"]:
-            skills[name]["url"] = url
-        if img and not skills[name]["img"]:
-            skills[name]["img"] = img
+        for n in expand_skill_parens(name):
+            if not n:
+                continue
+            if n not in skills:
+                skills[n] = {"url": "", "img": ""}
+            if url and not skills[n]["url"]:
+                skills[n]["url"] = url
+            if img and not skills[n]["img"]:
+                skills[n]["img"] = img
 
     return skills
 

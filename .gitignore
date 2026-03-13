@@ -10,3 +10,4 @@ build/
 htmlcov/
 outputs-*
 .DS_Store
+parsed_resumes/

@@ -31,6 +31,8 @@ from parsers import (
     parse_jobs_with_llm,
     parse_resume_sections,
     extract_skills_from_text,
+    expand_skill_parens,
+    expand_parens_in_text,
     enrich_skills_with_llm,
     categorize_skills_with_llm,
     build_categories_dict,
@@ -259,6 +261,19 @@ def main() -> int:
     except (RuntimeError, json.JSONDecodeError) as e:
         print(f"Warning: could not parse resume sections: {e}", file=sys.stderr)
 
+    # Expand "Name (a, b, c)" -> "Name a", "Name b", "Name c" in skills list (for other-sections.mjs and skills dict)
+    if resume_meta.get("skills"):
+        resume_meta["skills"] = [
+            n
+            for name in resume_meta["skills"]
+            for n in expand_skill_parens(str(name).strip())
+            if n
+        ]
+
+    # Expand "Name (a, b, c)" -> "Name a, Name b, Name c" in each job description before converting
+    for job in jobs:
+        job["description"] = expand_parens_in_text((job.get("description") or "").strip())
+
     # Convert to flock format
     flock_jobs = jobs_to_flock_format(jobs)
 
@@ -279,7 +294,8 @@ def main() -> int:
                     skills[name]["img"] = data["img"]
     print(f"Extracted {len(skills)} skills from descriptions")
 
-    # Add resume-level skills (from skills section); no job reference -> jobIDs []
+    # Add skills from the resume's skills section (not from job descriptions); jobIDs [] for these.
+    # resume_meta["skills"] already expanded above ("Name (a,b,c)" -> "Name a", "Name b", "Name c")
     for name in resume_meta.get("skills") or []:
         name = str(name).strip()
         if name and name not in skills:
