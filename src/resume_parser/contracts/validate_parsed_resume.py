@@ -4,15 +4,17 @@ Validate parsed resume data against parsed-resume-format-v1.0.json (same folder)
 FAIL FAST: raises ValidationError on first schema violation.
 
 Usage:
-  # Validate Python dicts (e.g. after parser produces output):
-  from validate_parsed_resume import validate_jobs, validate_skills, validate_other_sections
+  # CLI (after pip install resume-parser):
+  validate-parsed-resume /path/to/parsed_resumes/resume-id
 
+  # Or as module:
+  python -m resume_parser.contracts.validate_parsed_resume /path/to/parsed_resumes/resume-id
+
+  # Validate Python dicts programmatically:
+  from resume_parser.contracts.validate_parsed_resume import validate_jobs, validate_skills, validate_other_sections
   validate_jobs(jobs_dict)
   validate_skills(skills_dict)
   validate_other_sections(other_sections_dict)
-
-  # Validate a parsed-resume folder (reads .json and meta.json):
-  python contracts/validate_parsed_resume.py /path/to/parsed_resumes/resume-id
 
 Contract: resume-parser owns this validator and the schema (contracts/parsed-resume-format-v1.0.json).
 """
@@ -41,11 +43,21 @@ def _load_schema():
 def _build_validator(def_name: str):
     """Build a validator for a $defs entry. Uses full schema for $ref resolution."""
     schema = _load_schema()
-    ref_schema = {"$ref": f"#/$defs/{def_name}"}
-    resolver = jsonschema.RefResolver.from_schema(schema)
-    # Draft202012 matches our $schema; fallback to Draft7 for older jsonschema
-    validator_cls = getattr(jsonschema, "Draft202012Validator", jsonschema.Draft7Validator)
-    return validator_cls(ref_schema, resolver=resolver)
+    # Use referencing.Registry (no deprecation); fallback to RefResolver on older jsonschema
+    try:
+        from referencing import Registry
+        from referencing.jsonschema import DRAFT202012
+        resource = DRAFT202012.create_resource(schema)
+        uri = schema.get("$id", "urn:resume-parser:parsed-resume-format-v1.0")
+        registry = Registry().with_resource(uri=uri, resource=resource)
+        ref_schema = {"$ref": f"{uri}#/$defs/{def_name}"}
+        validator_cls = getattr(jsonschema, "Draft202012Validator", jsonschema.Draft7Validator)
+        return validator_cls(ref_schema, registry=registry)
+    except ImportError:
+        ref_schema = {"$ref": f"#/$defs/{def_name}"}
+        resolver = jsonschema.RefResolver.from_schema(schema)
+        validator_cls = getattr(jsonschema, "Draft202012Validator", jsonschema.Draft7Validator)
+        return validator_cls(ref_schema, resolver=resolver)
 
 
 def _load_json(path: Path) -> dict | list:
@@ -126,7 +138,7 @@ def validate_folder(folder: str | Path) -> list[str]:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("Usage: validate_parsed_resume.py <parsed-resume-folder>", file=sys.stderr)
+        print("Usage: validate-parsed-resume <parsed-resume-folder>", file=sys.stderr)
         return 1
     folder = sys.argv[1]
     try:

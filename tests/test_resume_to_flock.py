@@ -124,7 +124,7 @@ class TestWriters(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def test_file_not_found_returns_1(self):
-        with patch("sys.argv", ["resume_to_flock.py", "/nonexistent/resume.docx"]):
+        with patch("sys.argv", ["resume-to-flock", "/nonexistent/resume.docx"]):
             result = main()
             self.assertEqual(result, 1)
 
@@ -134,7 +134,7 @@ class TestMain(unittest.TestCase):
             resume_path = f.name
         try:
             with patch("resume_parser.resume_to_flock.extract_text", return_value="Sample resume text here."):
-                with patch("sys.argv", ["resume_to_flock.py", resume_path, "--no-llm"]):
+                with patch("sys.argv", ["resume-to-flock", resume_path, "--no-llm"]):
                     with patch("builtins.print"):
                         result = main()
             self.assertEqual(result, 0)
@@ -169,7 +169,7 @@ class TestMain(unittest.TestCase):
                             with patch("resume_parser.resume_to_flock.parse_resume_sections", return_value=resume_meta):
                                 with patch("resume_parser.resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
                                     with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
-                                        with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
+                                        with patch("sys.argv", ["resume-to-flock", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
                                             with patch("builtins.print"):
                                                 result = main()
                 self.assertEqual(result, 0)
@@ -214,7 +214,7 @@ class TestMain(unittest.TestCase):
                                     with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
                                         merge_mock = MagicMock()
                                         with patch("resume_parser.resume_to_flock.run_merge_interactive", merge_mock):
-                                            with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge"]):
+                                            with patch("sys.argv", ["resume-to-flock", resume_path, "-o", str(out_dir), "--no-merge"]):
                                                 with patch("builtins.print"):
                                                     result = main()
                 self.assertEqual(result, 0)

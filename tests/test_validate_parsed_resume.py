@@ -133,7 +133,7 @@ class TestValidateFolder(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def test_main_no_args_returns_1(self):
-        with patch.object(sys, "argv", ["validate_parsed_resume.py"]):
+        with patch.object(sys, "argv", ["validate-parsed-resume"]):
             with patch("sys.stderr"):
                 result = vpr.main()
         self.assertEqual(result, 1)
@@ -147,7 +147,7 @@ class TestMain(unittest.TestCase):
             (folder / "other-sections.json").write_text(json.dumps(_minimal_other_sections()), encoding="utf-8")
             (folder / "meta.json").write_text(json.dumps(_minimal_meta()), encoding="utf-8")
 
-            with patch.object(sys, "argv", ["validate_parsed_resume.py", str(folder)]):
+            with patch.object(sys, "argv", ["validate-parsed-resume", str(folder)]):
                 result = vpr.main()
             self.assertEqual(result, 0)
 
@@ -156,7 +156,7 @@ class TestMain(unittest.TestCase):
             folder = Path(d)
             (folder / "jobs.json").write_text("not json", encoding="utf-8")
 
-            with patch.object(sys, "argv", ["validate_parsed_resume.py", str(folder)]):
+            with patch.object(sys, "argv", ["validate-parsed-resume", str(folder)]):
                 with patch("sys.stderr"):
                     result = vpr.main()
             self.assertEqual(result, 1)
@@ -166,7 +166,7 @@ class TestMain(unittest.TestCase):
             folder = Path(d)
             (folder / "jobs.json").write_text('"not object or array"', encoding="utf-8")
 
-            with patch.object(sys, "argv", ["validate_parsed_resume.py", str(folder)]):
+            with patch.object(sys, "argv", ["validate-parsed-resume", str(folder)]):
                 with patch("sys.stderr"):
                     result = vpr.main()
             self.assertEqual(result, 1)

@@ -40,6 +40,5 @@ where = ["src"]
 resume_parser = [
   "contracts/*.json",
   "contracts/*.md",
-  "contracts/requirements.txt",
   "templates/*.html",
 ]

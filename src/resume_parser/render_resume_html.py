@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate resume.html from JSON files. Run separately after resume_to_flock.py.
+Generate resume.html from JSON files. Run separately after resume-to-flock.
 
 Usage:
-  python render_resume_html.py -i /path/to/output-folder
+  render-resume-html -i /path/to/output-folder
 
 Reads jobs.json, skills.json, categories.json, other-sections.json from the input dir.
 Writes resume.html and resume_template.html to the same dir.

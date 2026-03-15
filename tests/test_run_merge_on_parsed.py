@@ -142,7 +142,7 @@ class TestRunMergeInDir(unittest.TestCase):
 class TestMain(unittest.TestCase):
     def test_main_nonexistent_path_returns_1(self):
         with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
-            with patch.object(sys, "argv", ["run_merge_on_parsed.py", "/nonexistent/path"]):
+            with patch.object(sys, "argv", ["run-merge-on-parsed", "/nonexistent/path"]):
                 with patch("sys.stderr"):
                     result = main()
         self.assertEqual(result, 1)
@@ -156,7 +156,7 @@ class TestMain(unittest.TestCase):
 
             with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
                 with patch("resume_parser.run_merge_on_parsed.run_merge_in_dir", return_value=True):
-                    with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(folder)]):
+                    with patch.object(sys, "argv", ["run-merge-on-parsed", str(folder)]):
                         result = main()
         self.assertEqual(result, 0)
 
@@ -164,7 +164,7 @@ class TestMain(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d)
             with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
-                with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(path), "--all"]):
+                with patch.object(sys, "argv", ["run-merge-on-parsed", str(path), "--all"]):
                     with patch("sys.stderr"):
                         result = main()
         self.assertEqual(result, 1)
@@ -174,7 +174,7 @@ class TestMain(unittest.TestCase):
             path = Path(d)
             # No skills.json
             with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
-                with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(path)]):
+                with patch.object(sys, "argv", ["run-merge-on-parsed", str(path)]):
                     with patch("sys.stderr"):
                         result = main()
         self.assertEqual(result, 1)

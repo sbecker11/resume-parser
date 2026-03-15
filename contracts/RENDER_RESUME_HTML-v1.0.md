@@ -1,6 +1,6 @@
 # render_resume_html — Standalone HTML Generator
 
-Generate `resume.html` from existing JSON files. Use when you have a resume folder (e.g. from `resume_to_flock.py`) and want to produce or refresh the HTML output without re-parsing.
+Generate `resume.html` from existing JSON files. Use when you have a resume folder (e.g. from `resume-to-flock`) and want to produce or refresh the HTML output without re-parsing.
 
 **Contract:** Owned and maintained by resume-parser; consumers (e.g. resume-flock) implement against this specification.
 
@@ -16,7 +16,7 @@ Generate `resume.html` from existing JSON files. Use when you have a resume fold
 Run from the resume-parser repo root (resume-flock invokes this path):
 
 ```bash
-python render_resume_html.py -i <path-to-resume-folder>
+render-resume-html -i <path-to-resume-folder>
 ```
 
 | Argument | Required | Description |
@@ -36,16 +36,16 @@ python render_resume_html.py -i <path-to-resume-folder>
 
 ```bash
 # From repo root, render a previously parsed output folder
-python render_resume_html.py -i /tmp/resume-output
+render-resume-html -i /tmp/resume-output
 
 # Output to parsed_resumes subfolder
-python render_resume_html.py -i ./parsed_resumes/parsed-resume-1
+render-resume-html -i ./parsed_resumes/parsed-resume-1
 
 # Refresh HTML after editing JSON files manually
-python render_resume_html.py -i ~/workspace-resume/parsed-resumes/parsed-resume-1
+render-resume-html -i ~/workspace-resume/parsed-resumes/parsed-resume-1
 
 # Render with square brackets kept in body text (default is to strip them)
-python render_resume_html.py -i ./parsed_resumes/shawn-becker --show-brackets
+render-resume-html -i ./parsed_resumes/shawn-becker --show-brackets
 ```
 
 ## Errors
@@ -55,7 +55,7 @@ python render_resume_html.py -i ./parsed_resumes/shawn-becker --show-brackets
 
 ## Integration
 
-- **With resume_to_flock.py**: Pass `--render` to run this script after parsing
+- **With resume-to-flock**: Pass `--render` to run the renderer after parsing
 - **Without parsing**: Run this script directly on any folder that already has the four JSON files
 
 ## Revision history

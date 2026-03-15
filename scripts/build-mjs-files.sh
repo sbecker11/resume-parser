@@ -17,5 +17,5 @@ done
 # create new output files (jobs.json, skills.json, categories.json, other-sections.json, resume.html, resume_template.html)
 cd "$(dirname "$0")/.."
 # --provider openai (commented out; Anthropic only)
-python resume_to_flock.py "$RESUME_FILE" -o "$FLOCK_STATIC"
+resume-to-flock "$RESUME_FILE" -o "$FLOCK_STATIC"
 

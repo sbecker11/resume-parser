@@ -8,12 +8,13 @@ then writes back updated skills.json and categories.json, recomputes job
 skillIDs, and optionally re-renders resume.html.
 
 Usage:
-  python scripts/run_merge_on_parsed.py <path-to-parsed-folder> [--render]
-  python scripts/run_merge_on_parsed.py parsed_resumes --all [--render]
+  run-merge-on-parsed <path-to-parsed-folder> [--render]
+  run-merge-on-parsed parsed_resumes --all [--render]
+  # Or from repo: python scripts/run_merge_on_parsed.py ...
 
   --all         Run merge for each subfolder of the given directory.
   --accept-all  Apply all LLM-suggested merges without prompting (batch mode).
-  --render  (or --render-after-merging)  Re-run render_resume_html after merging.
+  --render  (or --render-after-merging)  Re-run render-resume-html after merging.
 """
 
 import argparse

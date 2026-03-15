@@ -3,14 +3,15 @@
 resume-to-flock: Parse resume (DOCX/PDF) into flock-of-postcards jobs.json, skills.json, categories.json, other-sections.json.
 
 Usage:
-  python resume_to_flock.py <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
+  resume-to-flock <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
+  # Or from repo: python resume_to_flock.py ...
 
   --output-dir   Where to write .json files (and optional resume copy)
   --no-llm       Skip LLM calls; use extraction only (for testing)
   --no-enrich    Skip LLM skill URL enrichment
   --no-merge     Skip skill merge step (non-interactive)
   --provider     Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY
-  --render       After writing .json, run render_resume_html to generate resume.html
+  --render       After writing .json, run render-resume-html to generate resume.html
 """
 
 import argparse

@@ -67,8 +67,7 @@ See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps for all
 Provide the path to your resume file (DOCX or PDF); there is no project `resumes/` folder.
 
 ```bash
-python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
-
+resume-to-flock /path/to/resume.docx -o /path/to/output-files
 ```
 
 ### Options
@@ -81,7 +80,7 @@ python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
 | `--no-enrich` | Skip LLM skill URL enrichment |
 | `--provider` | Force LLM_PROVIDER: `anthropic` (requires ANTHROPIC_API_KEY) |
 | `--no-merge` | Skip interactive skill merge step (for CI / non-interactive use) |
-| `--render` | After writing .json, generate `resume.html` (calls `render_resume_html`) |
+| `--render` | After writing .json, generate `resume.html` (calls `render-resume-html`) |
 
 ## Output
 
@@ -98,7 +97,7 @@ All files are written in the output folder (no subfolders). The output folder al
 - **categories.json** – Categories dict keyed by categoryID (resume-flock format). Each category has name, skillIDs.
 - **other-sections.json** – Contact, title, summary, certifications, websites, custom_sections, skills (resume-flock format).
 - **meta.json** – Resume metadata for list UI: id, displayName, createdAt, fileName, jobCount, skillCount.
-- **resume.html** – Rendered resume (generate with `python render_resume_html.py -i /path/to/output` or `--render`).
+- **resume.html** – Rendered resume (generate with `render-resume-html -i /path/to/output` or `--render`).
 - **resume_template.html** – Copy of the template (written when generating resume.html).
 
 ## Pipeline
@@ -115,34 +114,34 @@ All files are written in the output folder (no subfolders). The output folder al
 Generate `resume.html` from the JSON files:
 
 ```bash
-python render_resume_html.py -i /path/to/output-folder
+render-resume-html -i /path/to/output-folder
 ```
 
-Or use `--render` with `resume_to_flock.py` to run this step automatically after parsing. Contract for resume-flock: [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
+Or use `--render` with `resume-to-flock` to run this step automatically after parsing. Contract for resume-flock: [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
 
 ### Run merge on existing parsed folder
 
-To run the skill-merge step on a folder that already has parsed JSON (e.g. from a previous parse or from `parsed_resumes/`), use `scripts/run_merge_on_parsed.py`. It reads `jobs.json`, `skills.json`, and `categories.json`, runs the LLM merge (interactive or `--accept-all`), updates those files and job descriptions, and optionally re-renders `resume.html`.
+To run the skill-merge step on a folder that already has parsed JSON (e.g. from a previous parse or from `parsed_resumes/`), use `run-merge-on-parsed`. It reads `jobs.json`, `skills.json`, and `categories.json`, runs the LLM merge (interactive or `--accept-all`), updates those files and job descriptions, and optionally re-renders `resume.html`.
 
 ```bash
 # One folder (interactive prompts; re-render HTML after)
-python scripts/run_merge_on_parsed.py /path/to/parsed-folder --render
+run-merge-on-parsed /path/to/parsed-folder --render
 
 # All subfolders, apply all suggested merges, then render
-python scripts/run_merge_on_parsed.py parsed_resumes --all --accept-all --render
+run-merge-on-parsed parsed_resumes --all --accept-all --render
 ```
 
-Requires `ANTHROPIC_API_KEY` in `.env`. Options: `--all` (each subfolder), `--accept-all` (no prompts), `--render` / `--render-after-merging` (run `render_resume_html.py` after merging).
+Requires `ANTHROPIC_API_KEY` in `.env`. Options: `--all` (each subfolder), `--accept-all` (no prompts), `--render` / `--render-after-merging` (run `render-resume-html` after merging).
 
 ### Validate parsed output
 
 To check that a parsed-resume folder’s JSON conforms to the schema:
 
 ```bash
-python contracts/validate_parsed_resume.py /path/to/parsed-folder
+validate-parsed-resume /path/to/parsed-folder
 ```
 
-Requires `jsonschema` (`pip install jsonschema` or use `contracts/requirements.txt`). On success, prints the list of validated files (e.g. `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `meta.json`).
+Requires the package installed (`pip install -e .` or from Git). On success, prints the list of validated files (e.g. `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `meta.json`).
 
 ## Tests
 

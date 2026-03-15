@@ -6,7 +6,7 @@ A **parsed resume** is a directory under `parsed_resumes/<id>/` containing the o
 
 **Version:** 1.0
 
-**Schema:** Machine-readable validation is defined in `contracts/parsed-resume-format-v1.0.json` (JSON Schema). Python validator: `contracts/validate_parsed_resume.py`.
+**Schema:** Machine-readable validation is defined in `contracts/parsed-resume-format-v1.0.json` (JSON Schema). Validator: run `validate-parsed-resume <folder>` (CLI from the installed package) or `python -m resume_parser.contracts.validate_parsed_resume <folder>`.
 
 ## Resume-parser output format (current)
 
@@ -75,7 +75,7 @@ parsed_resumes/
 - If present, skills file must parse to an object keyed by skillID; each skill has display name (`name`) and optionally `url`, `img`, `categoryIDs`, `jobIDs`.
 - If present, categories file is an object keyed by categoryID; each category has `name` and optional `skillIDs`.
 - Server returns 404 only if the resume folder or jobs file is missing for a given `id`. `meta.json`, `skills`, and `categories` are optional.
-- **Schema**: See `contracts/parsed-resume-format-v1.0.json` for machine-readable validation. Python validator: `contracts/validate_parsed_resume.py`.
+- **Schema**: See `contracts/parsed-resume-format-v1.0.json` for machine-readable validation. Validator: `validate-parsed-resume` CLI (from the installed package).
 
 ## other-sections schema
 
@@ -163,7 +163,7 @@ Set and persist in `app_state.json` under `user-settings.currentResumeId`; the a
 
 ### Using a parsed resume (steps that work)
 
-1. **Parser output** (e.g. from `resume_to_flock.py` in workspace-resume/resume-parser): writes a **flattened** output folder (no subfolders) with `jobs.json`, `skills.json`, `categories.json`, and a **copy of the original resume** (DOCX/PDF) under its original filename (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`).
+1. **Parser output** (e.g. from `resume-to-flock` in workspace-resume/resume-parser): writes a **flattened** output folder (no subfolders) with `jobs.json`, `skills.json`, `categories.json`, and a **copy of the original resume** (DOCX/PDF) under its original filename (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`).
 2. **Symlink into resume-flock** (from resume-flock repo root):  
    `ln -s ~/workspace-resume/parsed-resumes/parsed-resume-1 ./parsed_resumes/parsed-resume-1`
 3. **Set default resume in app state**: In `app_state.json`, set `user-settings.currentResumeId` to `"parsed-resume-1"` (or `null` for static default).
@@ -184,11 +184,11 @@ CardsController now initializes when **either** (1) `scene-plane-ready` fires **
 
 To run the parse-resume pipeline from resume-flock given a `resume.docx` path:
 
-- **Parser**: `resume_to_flock.py` (in a separate repo, e.g. `RESUME_PARSER_PATH` or `~/workspace-resume/resume-parser`).
-- **Invocation**: `python resume_to_flock.py <path-to-resume.docx> -o <output-dir>`.
+- **Parser**: `resume-to-flock` (in a separate repo, e.g. `RESUME_PARSER_PATH` or `~/workspace-resume/resume-parser`).
+- **Invocation**: `resume-to-flock <path-to-resume.docx> -o <output-dir>`.
 - **Output dir**: Typically `parsed_resumes/<id>/` (or an external path like `~/workspace-resume/parsed-resumes/parsed-resume-1`). The parser writes a flattened folder: `jobs.json`, `skills.json`, `categories.json`, and a copy of the input resume file (original filename).
 
-**Script:** A parse-resume script (e.g. npm script `parse-resume`) invokes the parser subprocess (`python resume_to_flock.py ...`).
+**Script:** A parse-resume script (e.g. npm script `parse-resume`) invokes the parser subprocess (`resume-to-flock ...`).
 
 ```bash
 # Local folder: input docx inside the output dir (from repo root)
@@ -209,7 +209,7 @@ Set `RESUME_PARSER_PATH` if the parser repo is not at `../workspace-resume/resum
 
 The app can invoke an external script that reads resume data from the resume folder and produces HTML. Use the **Render** button to run it and view the result in a new tab.
 
-**Configuration:** Set `RESUME_HTML_RENDERER_SCRIPT` to the path of your render script. The resume-parser repo uses `python render_resume_html.py -i <resume-folder>` (contract: contracts/RENDER_RESUME_HTML-v1.0.md).
+**Configuration:** Set `RESUME_HTML_RENDERER_SCRIPT` to the path of your render script. The resume-parser repo uses `render-resume-html -i <resume-folder>` (contract: contracts/RENDER_RESUME_HTML-v1.0.md).
 
 **Invocation:** The server runs `node <scriptPath> <resumeFolderPath>`. The script receives the parsed resume folder path (e.g. `parsed_resumes/parsed-resume-1` resolved to an absolute path) as its first argument.
 
