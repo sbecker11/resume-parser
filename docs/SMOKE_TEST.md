@@ -1,14 +1,17 @@
 # Manual Smoke Test: resume-parser
 
+Covers all four CLI utilities: `resume_to_flock.py`, `render_resume_html.py`, `scripts/run_merge_on_parsed.py`, `schemas/validate_parsed_resume.py`.
+
 ## Prerequisites
 
 - Virtual environment activated: `source .venv/bin/activate`
-- `.env` with `ANTHROPIC_API_KEY` set
+- `.env` with `ANTHROPIC_API_KEY` set (for parse and merge steps)
 - Run from repo root (so `tests/test-resume.docx` is available)
+- For validation: `pip install jsonschema` (see `schemas/requirements.txt` if needed)
 
 ---
 
-## 1. Full pipeline (parse → JSON)
+## 1. Full pipeline (parse → JSON) — `resume_to_flock.py`
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
@@ -20,7 +23,7 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
 
 ---
 
-## 2. Full pipeline with `--no-merge` (non-interactive)
+## 2. Full pipeline with `--no-merge` (non-interactive) — `resume_to_flock.py`
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output --no-merge
@@ -31,7 +34,7 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output --no-merg
 
 ---
 
-## 3. Full pipeline with HTML render
+## 3. Full pipeline with HTML render — `resume_to_flock.py`
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output --no-merge --render
@@ -42,7 +45,7 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output --no-merg
 
 ---
 
-## 4. Skill merge (interactive)
+## 4. Skill merge (interactive) — `resume_to_flock.py`
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
@@ -58,7 +61,7 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
 
 ---
 
-## 5. Standalone HTML render
+## 5. Standalone HTML render — `render_resume_html.py`
 
 ```bash
 # Ensure output folder has .json files from step 1, 2, or 3
@@ -71,7 +74,40 @@ python render_resume_html.py -i /tmp/resume-output
 
 ---
 
-## 6. Text extraction only
+## 6. Run merge on existing parsed folder — `scripts/run_merge_on_parsed.py`
+
+`run_merge_on_parsed.py` reads `jobs.json`, `skills.json`, and `categories.json` from a parsed folder, runs the LLM skill-merge step (interactive or `--accept-all`), writes back updated JSON and job descriptions, and optionally re-renders HTML.
+
+```bash
+# One folder (interactive merge prompts)
+python scripts/run_merge_on_parsed.py /tmp/resume-output --render
+
+# All subfolders of parsed_json_resumes, apply all suggested merges, then render
+python scripts/run_merge_on_parsed.py parsed_json_resumes --all --accept-all --render
+```
+
+- [ ] Exits without errors when `ANTHROPIC_API_KEY` is set
+- [ ] Interactive: merge prompts appear; `y`/`n`/`a`/`q` work
+- [ ] Output: `skills.json`, `categories.json`, `jobs.json` updated; skill count reported (e.g. `Skills: 162 → 161`)
+- [ ] With `--render`: `resume.html` regenerated
+
+---
+
+## 7. Validate parsed resume folder — `schemas/validate_parsed_resume.py`
+
+Validates a folder’s JSON files and `meta.json` against `schemas/parsed-resume-format.json`. Requires `jsonschema` (`pip install jsonschema` or use `schemas/requirements.txt`).
+
+```bash
+# Use output from step 1, 2, or 3
+python schemas/validate_parsed_resume.py /tmp/resume-output
+```
+
+- [ ] Exits 0 and prints e.g. `Validated: jobs.json, skills.json, categories.json, other-sections.json, meta.json`
+- [ ] Invalid or missing files raise ValidationError or FileNotFoundError
+
+---
+
+## 8. Text extraction only — `resume_to_flock.py`
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx --no-llm
@@ -82,7 +118,7 @@ python resume_to_flock.py tests/test-resume.docx --no-llm
 
 ---
 
-## 7. Unit tests
+## 9. Unit tests
 
 ```bash
 python -m unittest discover -s tests

@@ -2,20 +2,20 @@
 
 ## Overview
 
-1. Add skill merging (LLM suggests, human approves) before writing .mjs
-2. Make .mjs writes lightweight serialization only
-3. Extract HTML generation into a separate script that reads .mjs files
+1. Add skill merging (LLM suggests, human approves) before writing JSON
+2. Keep JSON writes lightweight serialization only
+3. Extract HTML generation into a separate script that reads JSON files
 
 ---
 
-## Phase 1: Refactor HTML generation to read .mjs ✅
+## Phase 1: Refactor HTML generation to read JSON ✅
 
-### 1.1 Create `render_resume_html.py` ✅
+### 1.1 Create `render_resume_html.py` (at repo root) ✅
 
-- **Input:** `-i` / `--input-dir` (folder containing jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs)
+- **Input:** `-i` / `--input-dir` (folder containing jobs.json, skills.json, categories.json, other-sections.json)
 - **Output:** Writes `resume.html` and `resume_template.html` to that folder
 - **Logic:**
-  - Load .mjs files (parse as JS or convert to JSON: strip `const X = ` prefix and `;` suffix, then `json.loads`)
+  - Load JSON files
   - Build `skills_by_category` from categories + skills
   - Build `description_bullets` per job from `Description`
   - Apply linkify filter
@@ -25,8 +25,8 @@
 
 ### 1.2 Remove HTML render from `resume_to_flock.py` ✅
 
-- Removed `_render_resume_html`, `_linkify`, `_template_dir`; HTML generation moved to `render_resume_html.py`
-- Added optional `--render` flag to call render script after .mjs writes
+- Removed `_render_resume_html`, `_linkify`, `_template_dir`; HTML generation moved to `render_resume_html.py` (repo root)
+- Added optional `--render` flag to call render script after JSON writes
 
 ### 1.3 Update CLI / docs ✅
 
@@ -73,7 +73,7 @@
 
 ---
 
-## Phase 3: Ensure .mjs writes are lightweight
+## Phase 3: Ensure JSON writes are lightweight ✅
 
 ### 3.1 Current state
 
@@ -88,7 +88,7 @@
 4. **Skill merge** (suggest → approve → apply)
 5. Build jobs_by_id, skills_by_id (id-keyed for output)
 6. Add skillIDs to categories
-7. **Write .mjs** (jobs, skills, categories, other-sections)
+7. **Write JSON** (jobs.json, skills.json, categories.json, other-sections.json)
 8. Copy original resume
 9. **(Optional)** Run render_resume_html.py or document as separate step
 
@@ -105,20 +105,20 @@
 | `apply_skill_merge` merges jobIDs, categoryIDs | skill_merge | Given skills, jobs, categories; apply merge; assert jobs and categories updated |
 | `apply_skill_merge` removes sources from skills | skill_merge | Assert source keys gone, target has merged data |
 | `apply_skill_merge` with new target creates skill | skill_merge | Target not in skills; assert new skill added |
-| Render script loads .mjs and writes HTML | render_resume_html | Temp dir with sample .mjs; run script; assert resume.html exists, contains expected content |
+| Render script loads JSON and writes HTML | render_resume_html | Temp dir with sample JSON; run script; assert resume.html exists, contains expected content |
 | Render script linkify works | render_resume_html | other-sections or job desc with URL; assert `<a href` in output |
 
 ### Integration tests
 
 | Test | Description |
 |------|-------------|
-| Full pipeline with `--no-merge` | Parse resume → write .mjs; no prompts; assert all files exist |
-| Full pipeline with merge (mock stdin) | Patch input() to return "n" for all; assert no merges applied, .mjs written |
+| Full pipeline with `--no-merge` | Parse resume → write JSON; no prompts; assert all files exist |
+| Full pipeline with merge (mock stdin) | Patch input() to return "n" for all; assert no merges applied, JSON written |
 | Render after pipeline | Run pipeline with --no-merge, then render script; assert resume.html matches data |
 
 ### Manual tests
 
-- Run pipeline with real resume; at merge prompt, approve one merge; verify skills.mjs, jobs.mjs, categories.mjs reflect merge
+- Run pipeline with real resume; at merge prompt, approve one merge; verify skills.json, jobs.json, categories.json reflect merge
 - Run render_resume_html.py on existing output dir; verify HTML regenerates correctly
 - Run pipeline with `--no-merge` in CI / non-interactive context
 
@@ -128,8 +128,10 @@
 
 ```
 resume-parser/
-├── resume_to_flock.py      # Parse + merge + write .mjs (no HTML)
-├── render_resume_html.py   # Read .mjs → write resume.html (new)
+├── resume_to_flock.py      # Parse + merge + write JSON (no HTML)
+├── scripts/
+│   ├── render_resume_html.py   # Read JSON → write resume.html (contract: contracts/RENDER_RESUME_HTML-v1.0.md)
+│   └── run_merge_on_parsed.py
 ├── skill_merge.py          # suggest_skill_merges, apply_skill_merge (new)
 ├── parsers.py
 ├── extractors.py
@@ -147,7 +149,7 @@ resume-parser/
 
 ## Implementation order
 
-1. **Phase 1** – Extract HTML render to `render_resume_html.py`; remove from main pipeline; test.
+1. **Phase 1** – Extract HTML render to `render_resume_html.py` (repo root); remove from main pipeline; test.
 2. **Phase 2** – Add `skill_merge.py`; integrate merge step in `resume_to_flock.py`; add `--no-merge`.
-3. **Phase 3** – Confirm .mjs writes stay lightweight (no code change if order is correct).
+3. **Phase 3** – Confirm JSON writes stay lightweight (no code change if order is correct).
 4. **Tests** – Add unit and integration tests as each phase is completed.

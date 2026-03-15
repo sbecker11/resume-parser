@@ -198,6 +198,13 @@ def main() -> int:
     if args.provider:
         os.environ["LLM_PROVIDER"] = args.provider
 
+    if not args.no_llm:
+        try:
+            get_llm_provider()
+        except RuntimeError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
     out_dir = args.output_dir or _default_output_dir()
     print(f"Output directory: {out_dir}")
 
@@ -215,11 +222,7 @@ def main() -> int:
         return 0
 
     # Phase 2: Parse jobs with LLM
-    try:
-        provider = get_llm_provider()
-    except RuntimeError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
+    provider = get_llm_provider()
     print(f"Parsing jobs with LLM ({provider})...")
     try:
         jobs = parse_jobs_with_llm(raw_text)
@@ -287,7 +290,13 @@ def main() -> int:
 
     if not args.no_merge and len(skills) >= 2:
         print("Suggesting skill merges...")
-        run_merge_interactive(skills, flock_jobs, categories)
+        replacements = run_merge_interactive(skills, flock_jobs, categories)
+        for source_names, target_name in replacements:
+            for job in flock_jobs:
+                desc = job.get("Description") or ""
+                for sn in source_names:
+                    desc = desc.replace(sn, target_name)
+                job["Description"] = desc
 
     # Add skillIDs list to each category (skills that belong to that category)
     for cid, cat in categories.items():

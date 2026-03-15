@@ -18,6 +18,17 @@ ANTHROPIC_API_KEY=your-anthropic-key-here
 # Optional: LLM_PROVIDER=anthropic
 ```
 
+## CLI utilities
+
+| Script | Purpose |
+|--------|--------|
+| **`resume_to_flock.py`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
+| **`render_resume_html.py`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-flock. |
+| **`scripts/run_merge_on_parsed.py`** | Run skill merge on an existing parsed folder (read/write JSON, optional `--render`). |
+| **`schemas/validate_parsed_resume.py`** | Validate a parsed-resume folder’s JSON against the schema. |
+
+See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps for all four.
+
 ## Usage
 
 Provide the path to your resume file (DOCX or PDF); there is no project `resumes/` folder.
@@ -49,10 +60,10 @@ All files are written in the output folder (no subfolders). The output folder al
 - **Jobs** dictionary uses **jobID** as primary key. Job item has display name (role, employer), optional list of `skillIDs`.
 - **Categories** dictionary uses **categoryID** as primary key. Category item has display name (`name`), optional list of `skillIDs`.
 
-- **jobs.mjs** – `export const jobs = {...}` (resume-flock format). Jobs dict keyed by jobID; each job has role, employer, start, end, Description, skillIDs, etc.
-- **skills.mjs** – Skills dict keyed by skillID (slug): `{ "skillID": { "name": "Display Name", "url": "", "img": "", "categoryIDs": ["id1", ...], "jobIDs": [0, 1, ...] }, ... }`. Same structure as jobs and categories (ID as key, display name inside). Includes skills from job descriptions (with job indices in `jobIDs`) plus any from the resume’s skills section (`jobIDs` empty). `categoryIDs` reference **categories.mjs** for display names.
-- **categories.mjs** – `export const categories = {...}` (resume-flock format). Dict keyed by categoryID; each category has name, skillIDs.
-- **other-sections.mjs** – `export const otherSections = {...}` (resume-flock format): contact, title, summary, certifications, websites, custom_sections, skills.
+- **jobs.json** – Jobs dict keyed by jobID (resume-flock format). Each job has role, employer, start, end, Description, skillIDs, etc.
+- **skills.json** – Skills dict keyed by skillID (slug): `{ "skillID": { "name": "Display Name", "url": "", "img": "", "categoryIDs": ["id1", ...], "jobIDs": [0, 1, ...] }, ... }`. Same structure as jobs and categories (ID as key, display name inside). Includes skills from job descriptions (with job indices in `jobIDs`) plus any from the resume’s skills section (`jobIDs` empty). `categoryIDs` reference **categories.json** for display names.
+- **categories.json** – Categories dict keyed by categoryID (resume-flock format). Each category has name, skillIDs.
+- **other-sections.json** – Contact, title, summary, certifications, websites, custom_sections, skills (resume-flock format).
 - **meta.json** – Resume metadata for list UI: id, displayName, createdAt, fileName, jobCount, skillCount.
 - **resume.html** – Rendered resume (generate with `python render_resume_html.py -i /path/to/output` or `--render`).
 - **resume_template.html** – Copy of the template (written when generating resume.html).
@@ -74,7 +85,31 @@ Generate `resume.html` from the JSON files:
 python render_resume_html.py -i /path/to/output-folder
 ```
 
-Or use `--render` with `resume_to_flock.py` to run this step automatically after parsing.
+Or use `--render` with `resume_to_flock.py` to run this step automatically after parsing. Contract for resume-flock: [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
+
+### Run merge on existing parsed folder
+
+To run the skill-merge step on a folder that already has parsed JSON (e.g. from a previous parse or from `parsed_json_resumes/`), use `scripts/run_merge_on_parsed.py`. It reads `jobs.json`, `skills.json`, and `categories.json`, runs the LLM merge (interactive or `--accept-all`), updates those files and job descriptions, and optionally re-renders `resume.html`.
+
+```bash
+# One folder (interactive prompts; re-render HTML after)
+python scripts/run_merge_on_parsed.py /path/to/parsed-folder --render
+
+# All subfolders, apply all suggested merges, then render
+python scripts/run_merge_on_parsed.py parsed_json_resumes --all --accept-all --render
+```
+
+Requires `ANTHROPIC_API_KEY` in `.env`. Options: `--all` (each subfolder), `--accept-all` (no prompts), `--render` / `--render-after-merging` (run `render_resume_html.py` after merging).
+
+### Validate parsed output
+
+To check that a parsed-resume folder’s JSON conforms to the schema:
+
+```bash
+python schemas/validate_parsed_resume.py /path/to/parsed-folder
+```
+
+Requires `jsonschema` (`pip install jsonschema` or use `schemas/requirements.txt`). On success, prints the list of validated files (e.g. `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `meta.json`).
 
 ## Tests
 

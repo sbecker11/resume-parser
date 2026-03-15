@@ -7,6 +7,8 @@ Usage:
 
 Reads jobs.json, skills.json, categories.json, other-sections.json from the input dir.
 Writes resume.html and resume_template.html to the same dir.
+
+Contract: see contracts/RENDER_RESUME_HTML-v1.0.md (used by resume-flock to invoke this script).
 """
 
 import argparse
@@ -15,9 +17,9 @@ import re
 import sys
 from pathlib import Path
 
-# Script dir for templates
-SCRIPT_DIR = Path(__file__).resolve().parent
-TEMPLATES_DIR = SCRIPT_DIR / "templates"
+# Templates live at repo root next to this script
+_REPO_ROOT = Path(__file__).resolve().parent
+TEMPLATES_DIR = _REPO_ROOT / "templates"
 
 
 def _load_json(path: Path) -> dict | list:
@@ -39,6 +41,13 @@ def _linkify(text: str):
         result += Markup('<a href="') + safe_url + Markup('">') + safe_url + Markup("</a>")
         result += escape(parts[i + 1])
     return Markup(result)
+
+
+def _strip_square_brackets(text: str) -> str:
+    """Remove [ and ] from text (e.g. [Python] -> Python)."""
+    if not text:
+        return ""
+    return str(text).replace("[", "").replace("]", "")
 
 
 def _description_bullets(desc: str) -> list[str]:
@@ -82,9 +91,10 @@ def _build_skills_by_category(categories: dict, skills: dict) -> list[dict]:
     return result
 
 
-def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
+def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tuple[Path, Path]:
     """
     Read JSON files from input_dir, render HTML, write resume.html and resume_template.html.
+    If skip_square_brackets is True (default), remove [ and ] from job descriptions, summary, and other section content.
     Returns (resume_path, template_copy_path).
     """
     from jinja2 import Environment, FileSystemLoader
@@ -104,10 +114,12 @@ def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
     other = _load_json(other_path)
 
     jobs_list = _jobs_dict_to_list(jobs_dict)
-    jobs_with_bullets = [
-        {**job, "description_bullets": _description_bullets(job.get("Description") or "")}
-        for job in jobs_list
-    ]
+    jobs_with_bullets = []
+    for job in jobs_list:
+        bullets = _description_bullets(job.get("Description") or "")
+        if skip_square_brackets:
+            bullets = [_strip_square_brackets(b) for b in bullets]
+        jobs_with_bullets.append({**job, "description_bullets": bullets})
 
     skills_by_name = _build_skills_by_name(skills_dict)
     skills_by_category = _build_skills_by_category(categories_dict, skills_dict)
@@ -115,9 +127,16 @@ def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
     contact = other.get("contact") or {}
     title = other.get("title") or ""
     summary = other.get("summary") or ""
+    if skip_square_brackets:
+        summary = _strip_square_brackets(summary)
     certifications = other.get("certifications") or []
     websites = other.get("websites") or []
     other_sections = other.get("custom_sections") or other.get("other_sections") or []
+    if skip_square_brackets and other_sections:
+        other_sections = [
+            {**sec, "content": _strip_square_brackets(sec.get("content") or "")}
+            for sec in other_sections
+        ]
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
     env.filters["linkify"] = lambda s: _linkify(s) if s else ""
@@ -157,9 +176,15 @@ def main() -> int:
         required=True,
         help="Directory containing jobs.json, skills.json, categories.json, other-sections.json",
     )
+    parser.add_argument(
+        "--show-brackets",
+        dest="show_square_brackets",
+        action="store_true",
+        help="Keep square brackets in job descriptions, summary, and other section content (default: strip them, e.g. [Python] -> Python)",
+    )
     args = parser.parse_args()
     try:
-        resume_path, template_path = render_resume_html(args.input_dir)
+        resume_path, template_path = render_resume_html(args.input_dir, skip_square_brackets=not args.show_square_brackets)
         print(f"Wrote {resume_path}")
         print(f"Wrote {template_path}")
         return 0

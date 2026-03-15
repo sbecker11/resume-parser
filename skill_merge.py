@@ -29,29 +29,32 @@ def suggest_skill_merges(skills: dict[str, dict[str, Any]]) -> list[dict[str, An
     Returns list of {"sources": [skillID, ...], "target": skillID, "target_name": str}.
     On LLM failure or when no provider, returns [].
     """
-    try:
-        get_llm_provider()
-    except RuntimeError:
-        return []
+    get_llm_provider()  # raise if API key not set
 
     if len(skills) < 2:
         return []
 
     names = list(skills.keys())
     system_prompt = "Output valid JSON only, no markdown or explanation."
-    user_prompt = f"""These skills were extracted from a resume. Suggest merges for duplicates, case variants, or known aliases (e.g. Python/python, JS/JavaScript, AWS/Amazon Web Services).
+    user_prompt = f"""These skills were extracted from a resume. Suggest merges for duplicates, case variants, or known aliases.
+
 Output valid JSON only:
 {{ "suggestions": [ {{ "sources": ["SkillA", "SkillB"], "target": "CanonicalName" }}, ... ] }}
 
 Rules:
-- sources: skill names to merge (must exist in the list)
-- target: the canonical name to keep (one of sources or a known alias)
-- Only suggest merges where skills have similar meaning. Do NOT merge unrelated skills.
-- Leave suggestions empty [] if no merges are appropriate.
+- sources: array of skill names to merge (each must appear exactly in the Skills list below).
+- target: the canonical name to keep (one of the source names or a standard alias, e.g. "JavaScript" not "JS").
+- Merge when two or more entries are the same thing: case variants (Scikit-Learn / Scikit-learn), spacing (K-means / K-means Clustering), or common aliases (JS / JavaScript, AWS / Amazon Web Services).
+- Only suggest merges where skills have the same or very similar meaning. Do NOT merge unrelated skills.
+- If you see clear duplicates or aliases in the list, suggest them. Leave suggestions empty [] only if there are no such pairs.
+
+Example (if the list contained "Scikit-Learn", "Scikit-learn", "Python"):
+{{ "suggestions": [ {{ "sources": ["Scikit-Learn", "Scikit-learn"], "target": "Scikit-Learn" }} ] }}
 
 Skills: {json.dumps(names)}
 """
 
+    text = None
     try:
         text = _call_llm(system_prompt, user_prompt)
         if "```" in text:
@@ -61,13 +64,17 @@ Skills: {json.dumps(names)}
         raw = data.get("suggestions") or []
         if not isinstance(raw, list):
             return []
-    except Exception:
+    except Exception as e:
+        import sys
+        print(f"[skill_merge] LLM response (first 500 chars): {repr(text[:500]) if text else '(no response)'}", file=sys.stderr)
+        print(f"[skill_merge] Parse error: {e}", file=sys.stderr)
         return []
 
     id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
     name_to_id = {n: d["id"] for n, d in skills.items() if d.get("id")}
 
     result: list[dict[str, Any]] = []
+    dropped: list[str] = []
     for item in raw:
         if not isinstance(item, dict):
             continue
@@ -86,6 +93,7 @@ Skills: {json.dumps(names)}
             elif s in id_to_name:
                 source_ids.append(s)
         if not source_ids:
+            dropped.append(f"sources {sources_raw} not found in skill names")
             continue
         # Target: use existing id if name exists, else create new id
         used_ids = {d["id"] for d in skills.values()}
@@ -109,6 +117,9 @@ Skills: {json.dumps(names)}
             "target": target_id,
             "target_name": target_name,
         })
+    if not result and dropped:
+        import sys
+        print(f"[skill_merge] LLM returned {len(raw)} suggestion(s) but all were dropped: {dropped[:5]}{'...' if len(dropped) > 5 else ''}", file=sys.stderr)
     return result
 
 
@@ -119,13 +130,14 @@ def apply_skill_merge(
     sources: list[str],
     target: str,
     target_name: str | None = None,
-) -> None:
+) -> tuple[list[str], str]:
     """
     Merge source skills into target. Mutates skills in place.
     Jobs and categories are not mutated; they derive skillIDs from skills later.
     - sources: list of skillIDs to merge from
     - target: skillID to merge into (created if not exists)
     - target_name: display name for target if creating new
+    Returns (source_display_names_removed, target_display_name) for updating job descriptions.
     """
     id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
 
@@ -183,27 +195,54 @@ def apply_skill_merge(
 
     for key in source_keys_to_remove:
         skills.pop(key, None)
+    return (source_keys_to_remove, target_key)
+
+
+def run_merge_accept_all(
+    skills: dict[str, dict[str, Any]],
+    jobs: list[dict[str, Any]],
+    categories: dict[str, dict[str, Any]],
+) -> list[tuple[list[str], str]]:
+    """
+    Suggest merges and apply all of them without prompting.
+    Mutates skills in place.
+    Returns list of (source_display_names, target_display_name) for each applied merge.
+    """
+    suggestions = suggest_skill_merges(skills)
+    if not suggestions:
+        return []
+    id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
+    replacements: list[tuple[list[str], str]] = []
+    for sug in suggestions:
+        r = _do_apply(skills, jobs, categories, sug, id_to_name)
+        if r:
+            replacements.append(r)
+        id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
+    return replacements
 
 
 def run_merge_interactive(
     skills: dict[str, dict[str, Any]],
     jobs: list[dict[str, Any]],
     categories: dict[str, dict[str, Any]],
-) -> None:
+) -> list[tuple[list[str], str]]:
     """
     Suggest merges, prompt user for each, apply approved ones.
     Mutates skills in place.
+    Returns list of (source_display_names, target_display_name) for each applied merge.
     """
     suggestions = suggest_skill_merges(skills)
     if not suggestions:
-        return
+        return []
 
     id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
-
+    replacements: list[tuple[list[str], str]] = []
     accept_all = False
     for sug in suggestions:
         if accept_all:
-            _do_apply(skills, jobs, categories, sug, id_to_name)
+            r = _do_apply(skills, jobs, categories, sug, id_to_name)
+            if r:
+                replacements.append(r)
             continue
         source_names = [id_to_name.get(sid, sid) for sid in sug["sources"]]
         target_name = sug.get("target_name") or id_to_name.get(sug["target"], sug["target"])
@@ -216,11 +255,16 @@ def run_merge_interactive(
             break
         if ans == "a":
             accept_all = True
-            _do_apply(skills, jobs, categories, sug, id_to_name)
+            r = _do_apply(skills, jobs, categories, sug, id_to_name)
+            if r:
+                replacements.append(r)
             continue
         if ans == "y":
-            _do_apply(skills, jobs, categories, sug, id_to_name)
+            r = _do_apply(skills, jobs, categories, sug, id_to_name)
+            if r:
+                replacements.append(r)
             id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
+    return replacements
 
 
 def _do_apply(
@@ -229,8 +273,8 @@ def _do_apply(
     categories: dict[str, dict[str, Any]],
     sug: dict,
     id_to_name: dict[str, str],
-) -> None:
-    apply_skill_merge(
+) -> tuple[list[str], str] | None:
+    return apply_skill_merge(
         skills,
         jobs,
         categories,

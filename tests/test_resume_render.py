@@ -129,3 +129,54 @@ class TestRenderResumeHtml(unittest.TestCase):
             self.assertIn("Jane Doe", html)
             self.assertIn("AWS CPA", html)
             self.assertIn("Best dev 2024", html)
+
+    def test_default_strips_square_brackets(self):
+        """By default [Skill] in descriptions/summary/other is rendered as Skill."""
+        jobs = {
+            "0": {
+                "index": 0,
+                "role": "R",
+                "employer": "E",
+                "Description": "Used [Python] and [Django]. Built [RAG] pipeline.",
+                "skillIDs": [],
+            }
+        }
+        skills = {}
+        categories = {}
+        other = {
+            "contact": {},
+            "title": "",
+            "summary": "Expert in [ML] and [NLP].",
+            "certifications": [],
+            "skills": [],
+            "custom_sections": [{"title": "Tech", "content": "Loves [React] and [Node.js]."}],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir)
+            html = resume_path.read_text()
+            self.assertIn("Python", html)
+            self.assertIn("Django", html)
+            self.assertIn("RAG", html)
+            self.assertIn("ML", html)
+            self.assertIn("NLP", html)
+            self.assertIn("React", html)
+            self.assertIn("Node.js", html)
+            self.assertNotIn("[Python]", html)
+            self.assertNotIn("[Django]", html)
+            self.assertNotIn("[ML]", html)
+            self.assertNotIn("[React]", html)
+
+    def test_show_brackets_keeps_square_brackets(self):
+        """With skip_square_brackets=False (--show-brackets), [Skill] is left in output."""
+        jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "Used [Python].", "skillIDs": []}}
+        skills = {}
+        categories = {}
+        other = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "custom_sections": []}
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir, skip_square_brackets=False)
+            html = resume_path.read_text()
+            self.assertIn("[Python]", html)

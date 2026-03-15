@@ -31,7 +31,7 @@
     .cert-name { font-weight: 600; }
     .websites-list { list-style: none; padding-left: 0; margin: 0; }
     .website-item { margin-bottom: 0.35rem; }
-    .website-label { font-weight: 600; }
+    .website-url { font-size: 0.9em; color: var(--muted); margin-left: 0.25rem; }
     .other-section { margin-bottom: 1rem; }
     .other-section .content { white-space: pre-line; font-size: 0.95rem; }
     a { color: #1967d2; text-decoration: none; }
@@ -108,8 +108,7 @@
     <ul class="websites-list">
       {% for w in websites %}
       <li class="website-item">
-        <span class="website-label">{{ w.label }}:</span>
-        <a href="{{ w.url }}">{{ w.url }}</a>
+        <a href="{{ w.url }}">{{ w.label }}</a><span class="website-url"> — {{ w.url }}</span>
       </li>
       {% endfor %}
     </ul>

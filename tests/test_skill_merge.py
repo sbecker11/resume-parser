@@ -15,14 +15,14 @@ from skill_merge import (
 
 
 class TestSuggestSkillMerges(unittest.TestCase):
-    def test_returns_empty_when_no_llm_provider(self):
+    def test_raises_when_no_llm_provider(self):
         with patch("skill_merge.get_llm_provider", side_effect=RuntimeError("no key")):
             skills = {
                 "Python": {"id": "python", "url": "", "img": "", "jobIDs": [0], "categoryIDs": []},
                 "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
             }
-            result = suggest_skill_merges(skills)
-        self.assertEqual(result, [])
+            with self.assertRaises(RuntimeError):
+                suggest_skill_merges(skills)
 
     def test_returns_empty_when_less_than_two_skills(self):
         with patch("skill_merge.get_llm_provider", return_value="anthropic"):
