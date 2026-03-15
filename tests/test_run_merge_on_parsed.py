@@ -1,4 +1,4 @@
-"""Tests for scripts/run_merge_on_parsed.py (skill merge on parsed folder)."""
+"""Tests for resume_parser.run_merge_on_parsed (skill merge on parsed folder)."""
 import json
 import sys
 import tempfile
@@ -6,9 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from scripts.run_merge_on_parsed import (
+from resume_parser.run_merge_on_parsed import (
     skills_file_to_merge_format,
     skills_merge_to_file_format,
     jobs_dict_to_list,
@@ -95,7 +93,7 @@ class TestRunMergeInDir(unittest.TestCase):
             folder = Path(d)
             self._write_parsed_folder(folder)
 
-            with patch("scripts.run_merge_on_parsed.run_merge_interactive", return_value=[]) as mock_merge:
+            with patch("resume_parser.run_merge_on_parsed.run_merge_interactive", return_value=[]) as mock_merge:
                 result = run_merge_in_dir(folder, render=False, accept_all=False)
             self.assertTrue(result)
             mock_merge.assert_called_once()
@@ -110,8 +108,8 @@ class TestRunMergeInDir(unittest.TestCase):
             self._write_parsed_folder(folder)
             (folder / "other-sections.json").write_text(json.dumps({"contact": {}, "title": "", "summary": "", "certifications": [], "websites": [], "custom_sections": []}), encoding="utf-8")
 
-            with patch("scripts.run_merge_on_parsed.run_merge_interactive", return_value=[]):
-                with patch("render_resume_html.render_resume_html", return_value=(folder / "resume.html", folder / "resume_template.html")) as mock_render:
+            with patch("resume_parser.run_merge_on_parsed.run_merge_interactive", return_value=[]):
+                with patch("resume_parser.render_resume_html.render_resume_html", return_value=(folder / "resume.html", folder / "resume_template.html")) as mock_render:
                     result = run_merge_in_dir(folder, render=True, accept_all=False)
             self.assertTrue(result)
             mock_render.assert_called_once_with(folder)
@@ -135,7 +133,7 @@ class TestRunMergeInDir(unittest.TestCase):
             (folder / "skills.json").write_text(json.dumps(skills), encoding="utf-8")
             (folder / "categories.json").write_text(json.dumps(categories), encoding="utf-8")
 
-            with patch("scripts.run_merge_on_parsed.run_merge_interactive") as mock_merge:
+            with patch("resume_parser.run_merge_on_parsed.run_merge_interactive") as mock_merge:
                 result = run_merge_in_dir(folder, render=False, accept_all=False)
             self.assertTrue(result)
             mock_merge.assert_not_called()
@@ -143,7 +141,7 @@ class TestRunMergeInDir(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def test_main_nonexistent_path_returns_1(self):
-        with patch("scripts.run_merge_on_parsed._require_llm_api_key"):
+        with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
             with patch.object(sys, "argv", ["run_merge_on_parsed.py", "/nonexistent/path"]):
                 with patch("sys.stderr"):
                     result = main()
@@ -156,8 +154,8 @@ class TestMain(unittest.TestCase):
             (folder / "skills.json").write_text(json.dumps({"a": {"name": "A", "url": "", "img": "", "categoryIDs": [], "jobIDs": [0]}, "b": {"name": "B", "url": "", "img": "", "categoryIDs": [], "jobIDs": []}}), encoding="utf-8")
             (folder / "categories.json").write_text(json.dumps({}), encoding="utf-8")
 
-            with patch("scripts.run_merge_on_parsed._require_llm_api_key"):
-                with patch("scripts.run_merge_on_parsed.run_merge_in_dir", return_value=True):
+            with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
+                with patch("resume_parser.run_merge_on_parsed.run_merge_in_dir", return_value=True):
                     with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(folder)]):
                         result = main()
         self.assertEqual(result, 0)
@@ -165,7 +163,7 @@ class TestMain(unittest.TestCase):
     def test_main_all_with_no_subdirs_returns_1(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d)
-            with patch("scripts.run_merge_on_parsed._require_llm_api_key"):
+            with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
                 with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(path), "--all"]):
                     with patch("sys.stderr"):
                         result = main()
@@ -175,7 +173,7 @@ class TestMain(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d)
             # No skills.json
-            with patch("scripts.run_merge_on_parsed._require_llm_api_key"):
+            with patch("resume_parser.run_merge_on_parsed._require_llm_api_key"):
                 with patch.object(sys, "argv", ["run_merge_on_parsed.py", str(path)]):
                     with patch("sys.stderr"):
                         result = main()

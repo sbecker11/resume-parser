@@ -1,14 +1,11 @@
-"""Tests for resume_to_flock.py to achieve >= 80% coverage."""
+"""Tests for resume_parser.resume_to_flock to achieve >= 80% coverage."""
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from resume_to_flock import (
+from resume_parser.resume_to_flock import (
     _default_output_dir,
     _write_jobs_json,
     _write_skills_json,
@@ -136,7 +133,7 @@ class TestMain(unittest.TestCase):
             f.write(b"dummy")
             resume_path = f.name
         try:
-            with patch("resume_to_flock.extract_text", return_value="Sample resume text here."):
+            with patch("resume_parser.resume_to_flock.extract_text", return_value="Sample resume text here."):
                 with patch("sys.argv", ["resume_to_flock.py", resume_path, "--no-llm"]):
                     with patch("builtins.print"):
                         result = main()
@@ -166,12 +163,12 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [], "categories": ["Programming Language"]},
                 }
 
-                with patch("resume_to_flock.extract_text", return_value="Resume text"):
-                    with patch("resume_to_flock.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_to_flock.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
+                with patch("resume_parser.resume_to_flock.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_flock.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_flock.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
                                         with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
                                             with patch("builtins.print"):
                                                 result = main()
@@ -209,14 +206,14 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                     "Java": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                 }
-                with patch("resume_to_flock.extract_text", return_value="Resume text"):
-                    with patch("resume_to_flock.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_to_flock.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
+                with patch("resume_parser.resume_to_flock.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_flock.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_flock.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
                                         merge_mock = MagicMock()
-                                        with patch("resume_to_flock.run_merge_interactive", merge_mock):
+                                        with patch("resume_parser.resume_to_flock.run_merge_interactive", merge_mock):
                                             with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge"]):
                                                 with patch("builtins.print"):
                                                     result = main()

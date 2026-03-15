@@ -1,12 +1,9 @@
-"""Tests for skill_merge module."""
-import sys
+"""Tests for resume_parser.skill_merge module."""
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from skill_merge import (
+from resume_parser.skill_merge import (
     suggest_skill_merges,
     apply_skill_merge,
     run_merge_interactive,
@@ -16,7 +13,7 @@ from skill_merge import (
 
 class TestSuggestSkillMerges(unittest.TestCase):
     def test_raises_when_no_llm_provider(self):
-        with patch("skill_merge.get_llm_provider", side_effect=RuntimeError("no key")):
+        with patch("resume_parser.skill_merge.get_llm_provider", side_effect=RuntimeError("no key")):
             skills = {
                 "Python": {"id": "python", "url": "", "img": "", "jobIDs": [0], "categoryIDs": []},
                 "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -25,15 +22,15 @@ class TestSuggestSkillMerges(unittest.TestCase):
                 suggest_skill_merges(skills)
 
     def test_returns_empty_when_less_than_two_skills(self):
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
             skills = {"Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []}}
             result = suggest_skill_merges(skills)
         self.assertEqual(result, [])
 
     def test_returns_list_structure_on_llm_success(self):
         llm_response = '{"suggestions": [{"sources": ["Python", "python"], "target": "Python"}]}'
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value=llm_response):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value=llm_response):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [0], "categoryIDs": ["prog"]},
                     "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [1], "categoryIDs": ["prog"]},
@@ -48,8 +45,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
         self.assertEqual(result[0]["target"], "python")
 
     def test_returns_empty_on_llm_failure(self):
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", side_effect=Exception("API error")):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", side_effect=Exception("API error")):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -59,8 +56,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
 
     def test_strips_markdown_from_llm_response(self):
         llm_response = '```json\n{"suggestions": [{"sources": ["Python", "python"], "target": "Python"}]}\n```'
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value=llm_response):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value=llm_response):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -70,8 +67,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
         self.assertEqual(result[0]["target"], "python")
 
     def test_returns_empty_when_suggestions_not_list(self):
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value='{"suggestions": "invalid"}'):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value='{"suggestions": "invalid"}'):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "Java": {"id": "java", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -83,8 +80,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
         """When target name is new but slugifies to existing id, use suffix."""
         # "Python" as target not in skills; slug "python" exists (from "python" skill)
         llm_response = '{"suggestions": [{"sources": ["python", "Python 2"], "target": "Python"}]}'
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value=llm_response):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value=llm_response):
                 skills = {
                     "python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "Python 2": {"id": "python-2", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -99,8 +96,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
     def test_skips_item_with_source_resolved_by_id(self):
         """Source can be resolved by skill id (id_to_name) when not a name."""
         llm_response = '{"suggestions": [{"sources": ["python-1", "Python"], "target": "Python"}]}'
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value=llm_response):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value=llm_response):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "python": {"id": "python-1", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -110,8 +107,8 @@ class TestSuggestSkillMerges(unittest.TestCase):
         self.assertIn("python-1", result[0]["sources"])
 
     def test_returns_empty_when_llm_returns_no_suggestions(self):
-        with patch("skill_merge.get_llm_provider", return_value="anthropic"):
-            with patch("skill_merge._call_llm", return_value='{"suggestions": []}'):
+        with patch("resume_parser.skill_merge.get_llm_provider", return_value="anthropic"):
+            with patch("resume_parser.skill_merge._call_llm", return_value='{"suggestions": []}'):
                 skills = {
                     "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
                     "Java": {"id": "java", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},
@@ -219,7 +216,7 @@ class TestRunMergeInteractive(unittest.TestCase):
         }
         jobs = []
         categories = {}
-        with patch("skill_merge.suggest_skill_merges", return_value=[]):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=[]):
             run_merge_interactive(skills, jobs, categories)
         self.assertEqual(len(skills), 2)
 
@@ -231,7 +228,7 @@ class TestRunMergeInteractive(unittest.TestCase):
         jobs = []
         categories = {}
         suggestions = [{"sources": ["python-1"], "target": "python", "target_name": "Python"}]
-        with patch("skill_merge.suggest_skill_merges", return_value=suggestions):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=suggestions):
             with patch("builtins.input", return_value="y"):
                 run_merge_interactive(skills, jobs, categories)
         self.assertNotIn("python", skills)
@@ -246,7 +243,7 @@ class TestRunMergeInteractive(unittest.TestCase):
         jobs = []
         categories = {}
         suggestions = [{"sources": ["python-1"], "target": "python", "target_name": "Python"}]
-        with patch("skill_merge.suggest_skill_merges", return_value=suggestions):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=suggestions):
             with patch("builtins.input", return_value="n"):
                 run_merge_interactive(skills, jobs, categories)
         self.assertIn("Python", skills)
@@ -264,7 +261,7 @@ class TestRunMergeInteractive(unittest.TestCase):
             {"sources": ["b"], "target": "a", "target_name": "A"},
             {"sources": ["c"], "target": "a", "target_name": "A"},
         ]
-        with patch("skill_merge.suggest_skill_merges", return_value=suggestions):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=suggestions):
             with patch("builtins.input", return_value="a"):  # accept all
                 run_merge_interactive(skills, jobs, categories)
         self.assertIn("A", skills)
@@ -279,7 +276,7 @@ class TestRunMergeInteractive(unittest.TestCase):
         jobs = []
         categories = {}
         suggestions = [{"sources": ["python-1"], "target": "python", "target_name": "Python"}]
-        with patch("skill_merge.suggest_skill_merges", return_value=suggestions):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=suggestions):
             with patch("builtins.input", return_value="q"):
                 run_merge_interactive(skills, jobs, categories)
         self.assertIn("python", skills)
@@ -293,7 +290,7 @@ class TestRunMergeInteractive(unittest.TestCase):
         jobs = []
         categories = {}
         suggestions = [{"sources": ["python-1"], "target": "python", "target_name": "Python"}]
-        with patch("skill_merge.suggest_skill_merges", return_value=suggestions):
+        with patch("resume_parser.skill_merge.suggest_skill_merges", return_value=suggestions):
             with patch("builtins.input", side_effect=EOFError()):
                 run_merge_interactive(skills, jobs, categories)
         self.assertIn("python", skills)

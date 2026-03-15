@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume – {{ contact.name or 'Resume' }}</title>
+  <style>
+    :root { --text: #222; --muted: #555; --line: #ddd; --bg: #fff; }
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; color: var(--text); background: var(--bg); max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.4; }
+    @media print { body { padding: 1rem; } }
+    h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem 0; }
+    .title { font-size: 1rem; color: var(--muted); margin-bottom: 1rem; }
+    .contact { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.25rem; }
+    .contact span + span::before { content: ' · '; }
+    .section { margin-bottom: 1.25rem; }
+    .section-head { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
+    .job { margin-bottom: 1rem; }
+    .job-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+    .job-role { font-weight: 700; }
+    .job-employer { font-style: italic; }
+    .job-dates { font-size: 0.9rem; color: var(--muted); }
+    .job-desc { margin-top: 0.35rem; font-size: 0.95rem; }
+    .job-desc ul { margin: 0.25rem 0 0 0; padding-left: 1.25rem; }
+    .job-desc li { margin-bottom: 0.2rem; }
+    .summary { white-space: pre-line; }
+    .skills-by-cat { list-style: disc; padding-left: 1.25rem; font-size: 0.95rem; }
+    .skills-by-cat li { margin-bottom: 0.35rem; }
+    .skills-by-cat .cat-name { font-weight: 600; }
+    .cert { margin-bottom: 0.35rem; }
+    .cert-name { font-weight: 600; }
+    .websites-list { list-style: none; padding-left: 0; margin: 0; }
+    .website-item { margin-bottom: 0.35rem; }
+    .website-url { font-size: 0.9em; color: var(--muted); margin-left: 0.25rem; }
+    .other-section { margin-bottom: 1rem; }
+    .other-section .content { white-space: pre-line; font-size: 0.95rem; }
+    a { color: #1967d2; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    {% if contact.name %}<h1>{{ contact.name }}</h1>{% endif %}
+    {% if title %}<p class="title">{{ title }}</p>{% endif %}
+    <p class="contact">
+      {% if contact.email %}<span><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></span>{% endif %}
+      {% if contact.phone %}<span>{{ contact.phone }}</span>{% endif %}
+      {% if contact.location %}<span>{{ contact.location }}</span>{% endif %}
+      {% if contact.linkedin %}<span><a href="{{ contact.linkedin }}">LinkedIn</a></span>{% endif %}
+      {% if contact.website %}<span><a href="{{ contact.website }}">Website</a></span>{% endif %}
+    </p>
+  </header>
+
+  {% if summary %}
+  <section class="section">
+    <h2 class="section-head">Summary</h2>
+    <p class="summary">{{ summary | linkify }}</p>
+  </section>
+  {% endif %}
+
+  {% if jobs %}
+  <section class="section">
+    <h2 class="section-head">Experience</h2>
+    {% for job in jobs %}
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">{{ job.role }}</span>
+        <span class="job-dates">{% if job.start %}{{ job.start }}{% endif %}{% if job.start and job.end %} – {% endif %}{% if job.end %}{{ job.end }}{% endif %}</span>
+      </div>
+      <div class="job-employer">{{ job.employer }}</div>
+      {% if job.description_bullets %}
+      <div class="job-desc">
+        <ul>
+          {% for bullet in job.description_bullets %}<li>{{ bullet | linkify }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if skills_by_category %}
+  <section class="section">
+    <h2 class="section-head">Skills</h2>
+    <ul class="skills-by-cat">
+      {% for group in skills_by_category %}
+      <li><span class="cat-name">{{ group.name }}</span>: {% for name in group.skills %}{% set data = skills[name] %}{% if data.url %}<a href="{{ data.url }}">{{ name }}</a>{% else %}{{ name }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if certifications %}
+  <section class="section">
+    <h2 class="section-head">Certifications</h2>
+    {% for c in certifications %}
+    <div class="cert">
+      <span class="cert-name">{{ c.name }}</span>{% if c.issuer %} – {{ c.issuer }}{% endif %}{% if c.date %} ({{ c.date }}){% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if websites %}
+  <section class="section">
+    <h2 class="section-head">Websites</h2>
+    <ul class="websites-list">
+      {% for w in websites %}
+      <li class="website-item">
+        <a href="{{ w.url }}">{{ w.label }}</a><span class="website-url"> — {{ w.url }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% for sec in other_sections %}
+  <section class="section other-section">
+    <h2 class="section-head">{{ sec.title }}</h2>
+    <div class="content">{{ sec.content | linkify }}</div>
+  </section>
+  {% endfor %}
+</body>
+</html>

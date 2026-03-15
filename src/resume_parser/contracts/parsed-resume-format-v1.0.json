@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-parser.example.com/contracts/parsed-resume-format-v1.0.json",
+  "title": "Parsed Resume Format",
+  "description": "Schema for resume-parser output (v1.0). See contracts/PARSED-RESUME-JSON-FORMAT-v1.0.md. Owned by resume-parser.",
+  "$defs": {
+    "jobItem": {
+      "type": "object",
+      "properties": {
+        "role": { "type": ["string", "null"] },
+        "employer": { "type": ["string", "null"] },
+        "start": { "type": ["string", "null"] },
+        "end": { "type": ["string", "null"] },
+        "Description": { "type": ["string", "null"] },
+        "skillIDs": { "type": "array", "items": {} },
+        "index": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "jobs": {
+      "oneOf": [
+        { "type": "array", "items": { "$ref": "#/$defs/jobItem" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/jobItem" } }
+      ]
+    },
+    "skillItem": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "img": { "type": ["string", "null"] },
+        "categoryIDs": { "type": "array", "items": { "type": "string" } },
+        "jobIDs": { "type": "array", "items": { "type": "number" } }
+      },
+      "additionalProperties": true
+    },
+    "skills": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/skillItem" }
+    },
+    "categoryItem": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "skillIDs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "categories": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/categoryItem" }
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "website": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "certificationItem": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "websiteItem": {
+      "type": "object",
+      "required": ["label", "url"],
+      "properties": {
+        "label": { "type": "string" },
+        "url": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "customSectionItem": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "otherSections": {
+      "type": "object",
+      "properties": {
+        "summary": { "type": "string" },
+        "title": { "type": "string" },
+        "contact": { "$ref": "#/$defs/contact" },
+        "certifications": { "type": "array", "items": { "$ref": "#/$defs/certificationItem" } },
+        "websites": { "type": "array", "items": { "$ref": "#/$defs/websiteItem" } },
+        "custom_sections": { "type": "array", "items": { "$ref": "#/$defs/customSectionItem" } }
+      },
+      "additionalProperties": true
+    },
+    "meta": {
+      "type": "object",
+      "required": ["id", "displayName", "createdAt", "jobCount", "skillCount"],
+      "properties": {
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "fileName": { "type": "string" },
+        "jobCount": { "type": "number" },
+        "skillCount": { "type": "number" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

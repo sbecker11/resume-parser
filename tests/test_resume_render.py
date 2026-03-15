@@ -1,13 +1,10 @@
-"""Tests for render_resume_html.py (HTML generation from JSON files)."""
+"""Tests for resume_parser.render_resume_html (HTML generation from JSON files)."""
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from render_resume_html import render_resume_html, _load_json
+from resume_parser.render_resume_html import render_resume_html, _load_json
 
 
 class TestRenderResumeHtml(unittest.TestCase):

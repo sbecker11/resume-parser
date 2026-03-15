@@ -1,4 +1,4 @@
-"""Tests for contracts/validate_parsed_resume.py (folder and schema validation)."""
+"""Tests for resume_parser.contracts.validate_parsed_resume (folder and schema validation)."""
 import json
 import sys
 import tempfile
@@ -6,12 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-# Load validate_parsed_resume from contracts/ so schema path resolves
-_contracts_dir = Path(__file__).resolve().parent.parent / "contracts"
-sys.path.insert(0, str(_contracts_dir))
-
 import jsonschema
-import validate_parsed_resume as vpr
+import resume_parser.contracts.validate_parsed_resume as vpr
 
 
 def _minimal_jobs_dict():

@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from extractors import extract_text
-from parsers import (
+from resume_parser.extractors import extract_text
+from resume_parser.parsers import (
     extract_skills_from_text,
     expand_skill_parens,
     expand_parens_in_text,
@@ -170,14 +170,14 @@ class TestExtractText(unittest.TestCase):
             extract_text(Path("/fake/resume.txt"))
         self.assertIn("Unsupported", str(ctx.exception))
 
-    @patch("extractors._extract_docx")
+    @patch("resume_parser.extractors._extract_docx")
     def test_docx_calls_extract_docx(self, mock_extract):
         mock_extract.return_value = "Resume text here"
         result = extract_text(Path("/fake/resume.docx"))
         self.assertEqual(result, "Resume text here")
         mock_extract.assert_called_once()
 
-    @patch("extractors._extract_pdf")
+    @patch("resume_parser.extractors._extract_pdf")
     def test_pdf_calls_extract_pdf(self, mock_extract):
         mock_extract.return_value = "PDF content here"
         result = extract_text(Path("/fake/resume.pdf"))
@@ -344,7 +344,7 @@ class TestJobsToFlockFormat(unittest.TestCase):
 class TestParseJobsWithLlm(unittest.TestCase):
     """Test parsers.parse_jobs_with_llm with mocked _call_llm."""
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_returns_jobs_from_json(self, mock_call_llm):
         mock_call_llm.return_value = '{"jobs": [{"role": "Dev", "employer": "Co", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"}]}'
         result = parse_jobs_with_llm("resume text")
@@ -352,14 +352,14 @@ class TestParseJobsWithLlm(unittest.TestCase):
         self.assertEqual(result[0]["role"], "Dev")
         self.assertEqual(result[0]["employer"], "Co")
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_strips_markdown_code_blocks(self, mock_call_llm):
         mock_call_llm.return_value = '```json\n{"jobs": [{"role": "R", "employer": "E", "start": "", "end": "", "description": ""}]}\n```'
         result = parse_jobs_with_llm("x")
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["role"], "R")
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_empty_jobs_key_returns_empty_list(self, mock_call_llm):
         mock_call_llm.return_value = "{}"
         result = parse_jobs_with_llm("x")
@@ -369,7 +369,7 @@ class TestParseJobsWithLlm(unittest.TestCase):
 class TestParseResumeSections(unittest.TestCase):
     """Test parsers.parse_resume_sections with mocked _call_llm."""
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_returns_normalized_dict(self, mock_call_llm):
         mock_call_llm.return_value = '''{
           "contact": { "name": "Jane", "email": "j@example.com", "phone": "", "location": "", "linkedin": "", "website": "" },
@@ -390,7 +390,7 @@ class TestParseResumeSections(unittest.TestCase):
         self.assertEqual(len(result["other_sections"]), 1)
         self.assertEqual(result["other_sections"][0]["title"], "Publications")
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_strips_markdown_and_normalizes_missing_keys(self, mock_call_llm):
         mock_call_llm.return_value = '```json\n{"contact": {}, "summary": "Hi"}\n```'
         result = parse_resume_sections("x")
@@ -405,30 +405,30 @@ class TestEnrichSkillsWithLlm(unittest.TestCase):
     """Test parsers.enrich_skills_with_llm with mocked LLM."""
 
     def test_returns_unchanged_when_no_provider(self):
-        with patch("parsers._llm_provider") as mock_provider:
+        with patch("resume_parser.parsers._llm_provider") as mock_provider:
             mock_provider.side_effect = RuntimeError("no key")
             skills = {"Python": {"url": "", "img": ""}}
             result = enrich_skills_with_llm(skills)
             self.assertEqual(result, skills)
 
     def test_returns_unchanged_when_no_skills_need_url(self):
-        with patch("parsers._llm_provider"), patch("parsers._call_llm") as mock_call:
+        with patch("resume_parser.parsers._llm_provider"), patch("resume_parser.parsers._call_llm") as mock_call:
             skills = {"Python": {"url": "https://python.org", "img": ""}}
             result = enrich_skills_with_llm(skills)
             mock_call.assert_not_called()
             self.assertEqual(result, skills)
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_updates_url_from_suggestions(self, mock_call_llm):
-        with patch("parsers._llm_provider"):
+        with patch("resume_parser.parsers._llm_provider"):
             mock_call_llm.return_value = '{"suggestions": [{"name": "Python", "url": "https://python.org"}]}'
             skills = {"Python": {"url": "", "img": ""}}
             result = enrich_skills_with_llm(skills)
             self.assertEqual(result["Python"]["url"], "https://python.org")
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_keeps_skills_on_llm_failure(self, mock_call_llm):
-        with patch("parsers._llm_provider"):
+        with patch("resume_parser.parsers._llm_provider"):
             mock_call_llm.side_effect = Exception("API error")
             skills = {"X": {"url": "", "img": ""}}
             result = enrich_skills_with_llm(skills)
@@ -439,24 +439,24 @@ class TestCategorizeSkillsWithLlm(unittest.TestCase):
     """Test parsers.categorize_skills_with_llm with mocked LLM."""
 
     def test_adds_empty_categories_when_no_provider(self):
-        with patch("parsers._llm_provider") as mock_provider:
+        with patch("resume_parser.parsers._llm_provider") as mock_provider:
             mock_provider.side_effect = RuntimeError("no key")
             skills = {"Python": {"url": "", "img": ""}}
             result = categorize_skills_with_llm(skills)
             self.assertEqual(result["Python"]["categories"], [])
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_assigns_categories_from_llm(self, mock_call_llm):
-        with patch("parsers._llm_provider"):
+        with patch("resume_parser.parsers._llm_provider"):
             mock_call_llm.return_value = '{"categories": {"Python": ["Programming Language"], "React": ["Framework", "Frontend"]}}'
             skills = {"Python": {"url": "", "img": ""}, "React": {"url": "", "img": ""}}
             result = categorize_skills_with_llm(skills)
             self.assertEqual(result["Python"]["categories"], ["Programming Language"])
             self.assertEqual(result["React"]["categories"], ["Framework", "Frontend"])
 
-    @patch("parsers._call_llm")
+    @patch("resume_parser.parsers._call_llm")
     def test_uses_empty_list_on_llm_failure(self, mock_call_llm):
-        with patch("parsers._llm_provider"):
+        with patch("resume_parser.parsers._llm_provider"):
             mock_call_llm.side_effect = Exception("API error")
             skills = {"X": {"url": "", "img": ""}}
             result = categorize_skills_with_llm(skills)
