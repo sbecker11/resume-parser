@@ -2,13 +2,42 @@
 
 Parse resume documents (DOCX/PDF) into flock-of-postcards data: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`.
 
-## Setup
+## Installation (for consumers like resume-flock)
+
+Install the package so you get the CLI commands and the `resume_parser` Python API.
+
+**From Git (branch or tag):**
 
 ```bash
-cd /Users/sbecker11/workspace-resume/resume-parser
+pip install "resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging"
+# or after merge: @main  — or pin a release: @v1.0.0
+```
+
+**From PyPI (once published):**
+
+```bash
+pip install resume-parser
+# or pin: resume-parser==1.0.0
+```
+
+**In a consumer project (e.g. resume-flock):**
+
+- **requirements.txt:**  
+  `resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging`
+- **pyproject.toml:**  
+  `dependencies = ["resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging"]`
+
+After install, the CLIs are on your PATH: `resume-to-flock`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`. Resume-flock can invoke the renderer with `render-resume-html -i <folder>` (see [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md)).
+
+---
+
+## Setup (developers)
+
+```bash
+cd /path/to/resume-parser
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 Create `.env` and set the LLM provider key (LLM_PROVIDER=anthropic uses ANTHROPIC_API_KEY):
@@ -20,12 +49,14 @@ ANTHROPIC_API_KEY=your-anthropic-key-here
 
 ## CLI utilities
 
-| Script | Purpose |
+When the package is installed, these commands are on your PATH. (Developers can also run the scripts in the repo.)
+
+| Command | Purpose |
 |--------|--------|
-| **`resume_to_flock.py`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
-| **`render_resume_html.py`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-flock. |
-| **`scripts/run_merge_on_parsed.py`** | Run skill merge on an existing parsed folder (read/write JSON, optional `--render`). |
-| **`contracts/validate_parsed_resume.py`** | Validate a parsed-resume folder’s JSON against the schema. |
+| **`resume-to-flock`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
+| **`render-resume-html`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-flock. |
+| **`run-merge-on-parsed`** | Run skill merge on an existing parsed folder (read/write JSON, optional `--render`). |
+| **`validate-parsed-resume`** | Validate a parsed-resume folder’s JSON against the schema. |
 
 See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps for all four.
 
