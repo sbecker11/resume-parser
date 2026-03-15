@@ -1,13 +1,13 @@
 # Manual Smoke Test: resume-parser
 
-Covers all four CLI utilities: `resume_to_flock.py`, `render_resume_html.py`, `scripts/run_merge_on_parsed.py`, `schemas/validate_parsed_resume.py`.
+Covers all four CLI utilities: `resume_to_flock.py`, `render_resume_html.py`, `scripts/run_merge_on_parsed.py`, `contracts/validate_parsed_resume.py`.
 
 ## Prerequisites
 
 - Virtual environment activated: `source .venv/bin/activate`
 - `.env` with `ANTHROPIC_API_KEY` set (for parse and merge steps)
 - Run from repo root (so `tests/test-resume.docx` is available)
-- For validation: `pip install jsonschema` (see `schemas/requirements.txt` if needed)
+- For validation: `pip install jsonschema` (see `contracts/requirements.txt` if needed)
 
 ---
 
@@ -93,13 +93,13 @@ python scripts/run_merge_on_parsed.py parsed_resumes --all --accept-all --render
 
 ---
 
-## 7. Validate parsed resume folder — `schemas/validate_parsed_resume.py`
+## 7. Validate parsed resume folder — `contracts/validate_parsed_resume.py`
 
-Validates a folder’s JSON files and `meta.json` against `schemas/parsed-resume-format.json`. Requires `jsonschema` (`pip install jsonschema` or use `schemas/requirements.txt`).
+Validates a folder’s JSON files and `meta.json` against `contracts/parsed-resume-format-v1.0.json`. Requires `jsonschema` (`pip install jsonschema` or use `contracts/requirements.txt`).
 
 ```bash
 # Use output from step 1, 2, or 3
-python schemas/validate_parsed_resume.py /tmp/resume-output
+python contracts/validate_parsed_resume.py /tmp/resume-output
 ```
 
 - [ ] Exits 0 and prints e.g. `Validated: jobs.json, skills.json, categories.json, other-sections.json, meta.json`

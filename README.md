@@ -25,7 +25,7 @@ ANTHROPIC_API_KEY=your-anthropic-key-here
 | **`resume_to_flock.py`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
 | **`render_resume_html.py`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-flock. |
 | **`scripts/run_merge_on_parsed.py`** | Run skill merge on an existing parsed folder (read/write JSON, optional `--render`). |
-| **`schemas/validate_parsed_resume.py`** | Validate a parsed-resume folder’s JSON against the schema. |
+| **`contracts/validate_parsed_resume.py`** | Validate a parsed-resume folder’s JSON against the schema. |
 
 See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps for all four.
 
@@ -106,10 +106,10 @@ Requires `ANTHROPIC_API_KEY` in `.env`. Options: `--all` (each subfolder), `--ac
 To check that a parsed-resume folder’s JSON conforms to the schema:
 
 ```bash
-python schemas/validate_parsed_resume.py /path/to/parsed-folder
+python contracts/validate_parsed_resume.py /path/to/parsed-folder
 ```
 
-Requires `jsonschema` (`pip install jsonschema` or use `schemas/requirements.txt`). On success, prints the list of validated files (e.g. `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `meta.json`).
+Requires `jsonschema` (`pip install jsonschema` or use `contracts/requirements.txt`). On success, prints the list of validated files (e.g. `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `meta.json`).
 
 ## Tests
 

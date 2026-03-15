@@ -6,7 +6,7 @@ A **parsed resume** is a directory under `parsed_resumes/<id>/` containing the o
 
 **Version:** 1.0
 
-**Schema:** Machine-readable validation is defined in `schemas/parsed-resume-format.json` (JSON Schema, in this repo). Python validator: `schemas/validate_parsed_resume.py`.
+**Schema:** Machine-readable validation is defined in `contracts/parsed-resume-format-v1.0.json` (JSON Schema). Python validator: `contracts/validate_parsed_resume.py`.
 
 ## Resume-parser output format (current)
 
@@ -75,7 +75,7 @@ parsed_resumes/
 - If present, skills file must parse to an object keyed by skillID; each skill has display name (`name`) and optionally `url`, `img`, `categoryIDs`, `jobIDs`.
 - If present, categories file is an object keyed by categoryID; each category has `name` and optional `skillIDs`.
 - Server returns 404 only if the resume folder or jobs file is missing for a given `id`. `meta.json`, `skills`, and `categories` are optional.
-- **Schema**: See `schemas/parsed-resume-format.json` for machine-readable validation. Python validator: `schemas/validate_parsed_resume.py`.
+- **Schema**: See `contracts/parsed-resume-format-v1.0.json` for machine-readable validation. Python validator: `contracts/validate_parsed_resume.py`.
 
 ## other-sections schema
 

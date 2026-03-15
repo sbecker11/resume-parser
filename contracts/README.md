@@ -24,7 +24,9 @@ Each contract is stored with its version in the filename so all versions remain 
 
 - **RENDER_RESUME_HTML-v1.0.md** — Standalone HTML generator (invocation, args, behavior)
 - **PARSED-RESUME-FORMAT-v1.0.md** — Parsed resume directory and JSON format
-- **PARSED-RESUME-JSON-FORMAT-v1.0.md** — Parsed resume JSON/directory spec (references schemas/parsed-resume-format.json)
+- **PARSED-RESUME-JSON-FORMAT-v1.0.md** — Parsed resume JSON/directory spec
+- **parsed-resume-format-v1.0.json** — JSON Schema for parsed output (jobs, skills, categories, otherSections, meta)
+- **validate_parsed_resume.py** — Python validator (uses the schema above). Run: `python contracts/validate_parsed_resume.py <folder>`. Requires `pip install -r contracts/requirements.txt` (jsonschema).
 
 When you publish a new version, add a new file (e.g. `RENDER_RESUME_HTML-v1.1.md`) and leave existing versions in place. Update repo references (README, script docstrings, etc.) to point to the version that current code implements. Consumers can pin to a specific file (e.g. `contracts/RENDER_RESUME_HTML-v1.0.md`).
 

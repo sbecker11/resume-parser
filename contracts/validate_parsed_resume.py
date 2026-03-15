@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validate parsed resume data against parsed-resume-format.json (same folder).
+Validate parsed resume data against parsed-resume-format-v1.0.json (same folder).
 FAIL FAST: raises ValidationError on first schema violation.
 
 Usage:
@@ -12,10 +12,9 @@ Usage:
   validate_other_sections(other_sections_dict)
 
   # Validate a parsed-resume folder (reads .json and meta.json):
-  python validate_parsed_resume.py /path/to/parsed_resumes/resume-id
+  python contracts/validate_parsed_resume.py /path/to/parsed_resumes/resume-id
 
-  # Copy this folder to resume-parser; ensure
-  # schema path resolves (same directory or set SCHEMA_PATH).
+Contract: resume-parser owns this validator and the schema (contracts/parsed-resume-format-v1.0.json).
 """
 
 import json
@@ -29,9 +28,9 @@ except ImportError:
         "jsonschema required. Install with: pip install jsonschema"
     ) from None
 
-# Schema lives alongside this script
+# Schema lives alongside this script (versioned)
 _SCHEMA_DIR = Path(__file__).resolve().parent
-_SCHEMA_PATH = Path(__file__).resolve().parent / "parsed-resume-format.json"
+_SCHEMA_PATH = _SCHEMA_DIR / "parsed-resume-format-v1.0.json"
 
 
 def _load_schema():
