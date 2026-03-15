@@ -82,8 +82,8 @@ python render_resume_html.py -i /tmp/resume-output
 # One folder (interactive merge prompts)
 python scripts/run_merge_on_parsed.py /tmp/resume-output --render
 
-# All subfolders of parsed_json_resumes, apply all suggested merges, then render
-python scripts/run_merge_on_parsed.py parsed_json_resumes --all --accept-all --render
+# All subfolders of parsed_resumes, apply all suggested merges, then render
+python scripts/run_merge_on_parsed.py parsed_resumes --all --accept-all --render
 ```
 
 - [ ] Exits without errors when `ANTHROPIC_API_KEY` is set

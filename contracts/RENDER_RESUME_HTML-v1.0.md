@@ -45,7 +45,7 @@ python render_resume_html.py -i ./parsed_resumes/parsed-resume-1
 python render_resume_html.py -i ~/workspace-resume/parsed-resumes/parsed-resume-1
 
 # Render with square brackets kept in body text (default is to strip them)
-python render_resume_html.py -i ./parsed_json_resumes/shawn-becker --show-brackets
+python render_resume_html.py -i ./parsed_resumes/shawn-becker --show-brackets
 ```
 
 ## Errors

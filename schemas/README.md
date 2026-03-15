@@ -4,8 +4,8 @@ Shared with **resume-parser** and used by **resume-flock** for format conformanc
 
 ## Files
 
-- **PARSED-RESUME-JSON-FORMAT.md** — Contract spec (directory layout, schemas, validation rules)
 - **parsed-resume-format.json** — JSON Schema (draft 2020-12) with `$defs` for jobs, skills, categories, otherSections, meta
+- Contract spec (directory layout, validation rules): **contracts/PARSED-RESUME-JSON-FORMAT-v1.0.md** (in resume-parser repo)
 - **validate_parsed_resume.py** — Python validator; FAIL FAST on schema violations
 
 ## Resume-Parser Integration
@@ -45,4 +45,4 @@ python schemas/validate_parsed_resume.py /path/to/parsed_resumes/resume-id
 
 ## Spec
 
-See `PARSED-RESUME-JSON-FORMAT.md` in this folder.
+See `contracts/PARSED-RESUME-JSON-FORMAT-v1.0.md` (in resume-parser repo).

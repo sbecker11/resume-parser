@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://resume-flock.example.com/schemas/parsed-resume-format.json",
   "title": "Parsed Resume Format",
-  "description": "Schema for resume-parser output. See PARSED-RESUME-JSON-FORMAT.md (in this folder). Shared with resume-flock and resume-parser.",
+  "description": "Schema for resume-parser output. See contracts/PARSED-RESUME-JSON-FORMAT-v1.0.md. Shared with resume-flock and resume-parser.",
   "$defs": {
     "jobItem": {
       "type": "object",

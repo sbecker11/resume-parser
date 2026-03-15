@@ -24,6 +24,7 @@ Each contract is stored with its version in the filename so all versions remain 
 
 - **RENDER_RESUME_HTML-v1.0.md** — Standalone HTML generator (invocation, args, behavior)
 - **PARSED-RESUME-FORMAT-v1.0.md** — Parsed resume directory and JSON format
+- **PARSED-RESUME-JSON-FORMAT-v1.0.md** — Parsed resume JSON/directory spec (references schemas/parsed-resume-format.json)
 
 When you publish a new version, add a new file (e.g. `RENDER_RESUME_HTML-v1.1.md`) and leave existing versions in place. Update repo references (README, script docstrings, etc.) to point to the version that current code implements. Consumers can pin to a specific file (e.g. `contracts/RENDER_RESUME_HTML-v1.0.md`).
 

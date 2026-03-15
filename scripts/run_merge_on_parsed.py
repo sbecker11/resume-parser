@@ -9,7 +9,7 @@ skillIDs, and optionally re-renders resume.html.
 
 Usage:
   python scripts/run_merge_on_parsed.py <path-to-parsed-folder> [--render]
-  python scripts/run_merge_on_parsed.py parsed_json_resumes --all [--render]
+  python scripts/run_merge_on_parsed.py parsed_resumes --all [--render]
 
   --all         Run merge for each subfolder of the given directory.
   --accept-all  Apply all LLM-suggested merges without prompting (batch mode).
@@ -163,7 +163,7 @@ def run_merge_in_dir(dir_path: Path, render: bool, accept_all: bool = False) -> 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run skill merge on parsed JSON resume folder(s)")
-    parser.add_argument("path", type=Path, help="Path to one parsed folder or to parsed_json_resumes")
+    parser.add_argument("path", type=Path, help="Path to one parsed folder or to parsed_resumes")
     parser.add_argument("--all", action="store_true", help="Run merge for each subfolder")
     parser.add_argument("--accept-all", action="store_true", help="Apply all suggested merges without prompting")
     parser.add_argument("--render", "--render-after-merging", dest="render", action="store_true", help="Re-render resume.html after merge")

@@ -12,4 +12,4 @@ outputs-*
 .DS_Store
 resumes/
 parsed_resumes/
-parsed_json_resumes/
+parsed_resumes/

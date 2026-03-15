@@ -89,14 +89,14 @@ Or use `--render` with `resume_to_flock.py` to run this step automatically after
 
 ### Run merge on existing parsed folder
 
-To run the skill-merge step on a folder that already has parsed JSON (e.g. from a previous parse or from `parsed_json_resumes/`), use `scripts/run_merge_on_parsed.py`. It reads `jobs.json`, `skills.json`, and `categories.json`, runs the LLM merge (interactive or `--accept-all`), updates those files and job descriptions, and optionally re-renders `resume.html`.
+To run the skill-merge step on a folder that already has parsed JSON (e.g. from a previous parse or from `parsed_resumes/`), use `scripts/run_merge_on_parsed.py`. It reads `jobs.json`, `skills.json`, and `categories.json`, runs the LLM merge (interactive or `--accept-all`), updates those files and job descriptions, and optionally re-renders `resume.html`.
 
 ```bash
 # One folder (interactive prompts; re-render HTML after)
 python scripts/run_merge_on_parsed.py /path/to/parsed-folder --render
 
 # All subfolders, apply all suggested merges, then render
-python scripts/run_merge_on_parsed.py parsed_json_resumes --all --accept-all --render
+python scripts/run_merge_on_parsed.py parsed_resumes --all --accept-all --render
 ```
 
 Requires `ANTHROPIC_API_KEY` in `.env`. Options: `--all` (each subfolder), `--accept-all` (no prompts), `--render` / `--render-after-merging` (run `render_resume_html.py` after merging).
