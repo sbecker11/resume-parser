@@ -1,0 +1,43 @@
+{
+  "mac-and-pc-software-applications": {
+    "name": "Mac and PC software applications",
+    "url": "https://www.apple.com",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "excel": {
+    "name": "Excel",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/excel",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "powerpoint": {
+    "name": "PowerPoint",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/powerpoint",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "spanish-proficient": {
+    "name": "Spanish proficient",
+    "url": "https://www.cervantes.es",
+    "img": "",
+    "categoryIDs": [],
+    "jobIDs": []
+  },
+  "french-basic-skills": {
+    "name": "French basic skills",
+    "url": "https://www.france.fr",
+    "img": "",
+    "categoryIDs": [],
+    "jobIDs": []
+  }
+}

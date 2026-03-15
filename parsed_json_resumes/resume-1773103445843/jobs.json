@@ -1,0 +1,91 @@
+{
+  "0": {
+    "index": 0,
+    "role": "Chief of Staff / Publicity Manager",
+    "employer": "Stanford Concert Network",
+    "start": "2024-04-01",
+    "end": "CURRENT_DATE",
+    "z-index": 1,
+    "css name": "darkforest",
+    "css RGB": "#116611",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Liaison between Executive Board and general staff • Lead meetings and planning of concert events • Manage print and media relations, marketing and external promotions",
+    "skillIDs": []
+  },
+  "1": {
+    "index": 1,
+    "role": "Executive Cabinet Member and Recording Artist",
+    "employer": "Inphanyte Records",
+    "start": "2023-11-01",
+    "end": "CURRENT_DATE",
+    "z-index": 2,
+    "css name": "darkcyan",
+    "css RGB": "#0069AC",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Coordinate campus events to promote records and artists • Write lyrics and work in studio recording and editing",
+    "skillIDs": []
+  },
+  "2": {
+    "index": 2,
+    "role": "Research Intern",
+    "employer": "Culture Pub",
+    "start": "2023-10-01",
+    "end": "2023-12-31",
+    "z-index": 3,
+    "css name": "darkcyan",
+    "css RGB": "#006688",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Devised new system to catalogue and retrieve film stock • Performed internet and archive research for upcoming specials",
+    "skillIDs": []
+  },
+  "3": {
+    "index": 3,
+    "role": "Programs Development Intern",
+    "employer": "Fender Center for the Performing Arts",
+    "start": "2023-06-01",
+    "end": "2023-08-31",
+    "z-index": 1,
+    "css name": "blue",
+    "css RGB": "#0000ff",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Selected to be Arts for Youth Fellow by Stanford's Haas Center for Public Service • Implemented three month marketing plan resulting in increase of center recognition and concert attendance • Developed and designed music camp program for summer 20XX • Produced and directed promotional video as part of Capital Expansion Campaign",
+    "skillIDs": []
+  },
+  "4": {
+    "index": 4,
+    "role": "Selection Team Member",
+    "employer": "Student Organizing Committee for the Arts",
+    "start": "2023-01-01",
+    "end": "2023-04-30",
+    "z-index": 2,
+    "css name": "mediumblue",
+    "css RGB": "#4400cd",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Chose artists and track listings for Stanford Soundtrack, Vol. 3 and developed record image",
+    "skillIDs": []
+  },
+  "5": {
+    "index": 5,
+    "role": "Account Executive, Advertising",
+    "employer": "Stanford Student Enterprises",
+    "start": "2022-06-01",
+    "end": "2022-09-30",
+    "z-index": 3,
+    "css name": "blueviolet",
+    "css RGB": "#8a2be2",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Met and frequently exceeded weekly sales goals; twice chosen as employee of the term • Designed several advertisements for clients and managed the accounts • Identified leads and used persuasive communication skills to generate advertising prospects using [Drupal], [Photoshop], [Illustrator], and [InDesign]",
+    "skillIDs": [
+      "drupal",
+      "photoshop",
+      "illustrator",
+      "indesign"
+    ]
+  }
+}

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Generate resume.html from .mjs files. Run separately after resume_to_flock.py.
+Generate resume.html from JSON files. Run separately after resume_to_flock.py.
 
 Usage:
   python render_resume_html.py -i /path/to/output-folder
 
-Reads jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs from the input dir.
+Reads jobs.json, skills.json, categories.json, other-sections.json from the input dir.
 Writes resume.html and resume_template.html to the same dir.
 """
 
@@ -20,16 +20,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPT_DIR / "templates"
 
 
-def _load_mjs(path: Path, var_name: str) -> dict | list:
-    """Load a .mjs file and return the JSON value. Accepts 'export const varName = ...' or 'const varName = ...'."""
-    text = path.read_text(encoding="utf-8")
-    # Match optional "export " then "const varName = " then capture JSON
-    pattern = rf"(?:export\s+)?const\s+{re.escape(var_name)}\s*=\s*(.+)"
-    m = re.search(pattern, text, re.DOTALL)
-    if not m:
-        raise ValueError(f"Could not find const {var_name} = ... in {path}")
-    json_str = m.group(1).strip().rstrip(";").strip()
-    return json.loads(json_str)
+def _load_json(path: Path) -> dict | list:
+    """Load a JSON file and return the parsed value."""
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _linkify(text: str):
@@ -91,24 +84,24 @@ def _build_skills_by_category(categories: dict, skills: dict) -> list[dict]:
 
 def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
     """
-    Read .mjs files from input_dir, render HTML, write resume.html and resume_template.html.
+    Read JSON files from input_dir, render HTML, write resume.html and resume_template.html.
     Returns (resume_path, template_copy_path).
     """
     from jinja2 import Environment, FileSystemLoader
 
-    jobs_path = input_dir / "jobs.mjs"
-    skills_path = input_dir / "skills.mjs"
-    categories_path = input_dir / "categories.mjs"
-    other_path = input_dir / "other-sections.mjs"
+    jobs_path = input_dir / "jobs.json"
+    skills_path = input_dir / "skills.json"
+    categories_path = input_dir / "categories.json"
+    other_path = input_dir / "other-sections.json"
 
     for p in (jobs_path, skills_path, categories_path, other_path):
         if not p.exists():
             raise FileNotFoundError(f"Missing {p.name} in {input_dir}")
 
-    jobs_dict = _load_mjs(jobs_path, "jobs")
-    skills_dict = _load_mjs(skills_path, "skills")
-    categories_dict = _load_mjs(categories_path, "categories")
-    other = _load_mjs(other_path, "otherSections")
+    jobs_dict = _load_json(jobs_path)
+    skills_dict = _load_json(skills_path)
+    categories_dict = _load_json(categories_path)
+    other = _load_json(other_path)
 
     jobs_list = _jobs_dict_to_list(jobs_dict)
     jobs_with_bullets = [
@@ -123,6 +116,7 @@ def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
     title = other.get("title") or ""
     summary = other.get("summary") or ""
     certifications = other.get("certifications") or []
+    websites = other.get("websites") or []
     other_sections = other.get("custom_sections") or other.get("other_sections") or []
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
@@ -138,6 +132,7 @@ def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
         categories=categories_dict,
         skills_by_category=skills_by_category,
         certifications=certifications,
+        websites=websites,
         other_sections=other_sections,
     )
 
@@ -155,12 +150,12 @@ def render_resume_html(input_dir: Path) -> tuple[Path, Path]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate resume.html from .mjs files")
+    parser = argparse.ArgumentParser(description="Generate resume.html from JSON files")
     parser.add_argument(
         "-i", "--input-dir",
         type=Path,
         required=True,
-        help="Directory containing jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs",
+        help="Directory containing jobs.json, skills.json, categories.json, other-sections.json",
     )
     args = parser.parse_args()
     try:

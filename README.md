@@ -1,6 +1,6 @@
 # resume-parser (resume-to-flock)
 
-Parse resume documents (DOCX/PDF) into flock-of-postcards data: `jobs.mjs` and `skills.mjs`.
+Parse resume documents (DOCX/PDF) into flock-of-postcards data: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`.
 
 ## Setup
 
@@ -31,13 +31,13 @@ python resume_to_flock.py /path/to/resume.docx -o /path/to/output-files
 
 | Option | Description |
 |-------|-------------|
-| `-o`, `--output-dir` | Where to write .mjs files (default: flock-of-postcards/static_content if found, else cwd) |
+| `-o`, `--output-dir` | Where to write .json files (default: flock-of-postcards/static_content if found, else cwd) |
 | `--id` | Resume id for meta.json (default: output dir basename) |
 | `--no-llm` | Skip LLM; only extract text (for testing) |
 | `--no-enrich` | Skip LLM skill URL enrichment |
 | `--provider` | Force LLM_PROVIDER: `anthropic` (requires ANTHROPIC_API_KEY) |
 | `--no-merge` | Skip interactive skill merge step (for CI / non-interactive use) |
-| `--render` | After writing .mjs, generate `resume.html` (calls `render_resume_html`) |
+| `--render` | After writing .json, generate `resume.html` (calls `render_resume_html`) |
 
 ## Output
 
@@ -64,11 +64,11 @@ All files are written in the output folder (no subfolders). The output folder al
 3. **Parse resume sections** – LLM extracts contact, summary, certifications, skills, other sections → `resume_meta.json`
 4. **Extract skills** – Regex `[text]{img}(url)` from job descriptions; merge resume skills section
 5. **Enrich** – Optional LLM pass to suggest URLs for skills without one
-6. **Categorize** – LLM assigns each skill a list of categories (e.g. Programming Language, Framework) → `skills.mjs`
+6. **Categorize** – LLM assigns each skill a list of categories (e.g. Programming Language, Framework) → `skills.json`
 
 ### HTML generation (optional)
 
-Generate `resume.html` from the .mjs files:
+Generate `resume.html` from the JSON files:
 
 ```bash
 python render_resume_html.py -i /path/to/output-folder

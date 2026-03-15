@@ -1,0 +1,65 @@
+{
+  "r": {
+    "name": "R",
+    "url": "https://www.r-project.org",
+    "img": "",
+    "categoryIDs": [
+      "programming-language",
+      "data-science"
+    ],
+    "jobIDs": [
+      1
+    ]
+  },
+  "spss": {
+    "name": "SPSS",
+    "url": "https://www.ibm.com/spss",
+    "img": "",
+    "categoryIDs": [
+      "data-science",
+      "tool"
+    ],
+    "jobIDs": [
+      2
+    ]
+  },
+  "excel": {
+    "name": "Excel",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/excel",
+    "img": "",
+    "categoryIDs": [
+      "tool",
+      "data-science"
+    ],
+    "jobIDs": [
+      2
+    ]
+  },
+  "java": {
+    "name": "Java",
+    "url": "https://www.oracle.com/java/",
+    "img": "",
+    "categoryIDs": [
+      "programming-language"
+    ],
+    "jobIDs": []
+  },
+  "microsoft-word": {
+    "name": "Microsoft Word",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/word",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "powerpoint": {
+    "name": "PowerPoint",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/powerpoint",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  }
+}

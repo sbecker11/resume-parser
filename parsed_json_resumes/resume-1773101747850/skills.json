@@ -1,0 +1,302 @@
+{
+  "news-releases": {
+    "name": "News releases",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "media-alerts": {
+    "name": "Media alerts",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "biographies": {
+    "name": "Biographies",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "client-profiles": {
+    "name": "Client profiles",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "fact-sheets": {
+    "name": "Fact sheets",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "backgrounders": {
+    "name": "Backgrounders",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "psas": {
+    "name": "PSAs",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "pitch-letters": {
+    "name": "Pitch letters",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "briefs": {
+    "name": "Briefs",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "executive-summaries": {
+    "name": "Executive summaries",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "memoranda": {
+    "name": "Memoranda",
+    "url": "https://www.prsa.org/",
+    "img": "",
+    "categoryIDs": [
+      "content-writing"
+    ],
+    "jobIDs": []
+  },
+  "media-map": {
+    "name": "Media Map",
+    "url": "https://www.cision.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "ed-cals": {
+    "name": "Ed Cals",
+    "url": "https://www.cision.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "bacon-s": {
+    "name": "Bacon's",
+    "url": "https://www.cision.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "dow-jones-interactive": {
+    "name": "Dow Jones Interactive",
+    "url": "https://www.dowjones.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "lexis-nexis": {
+    "name": "Lexis‐Nexis",
+    "url": "https://www.lexisnexis.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "microsoft-word": {
+    "name": "Microsoft Word",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/word",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "excel": {
+    "name": "Excel",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/excel",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "powerpoint": {
+    "name": "PowerPoint",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/powerpoint",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "outlook": {
+    "name": "Outlook",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/outlook",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "access": {
+    "name": "Access",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/access",
+    "img": "",
+    "categoryIDs": [
+      "database",
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "filemakerpro": {
+    "name": "FilemakerPro",
+    "url": "https://www.claris.com/filemaker/",
+    "img": "",
+    "categoryIDs": [
+      "database",
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "indesign": {
+    "name": "InDesign",
+    "url": "https://www.adobe.com/products/indesign.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "illustrator": {
+    "name": "Illustrator",
+    "url": "https://www.adobe.com/products/illustrator.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "microsoft-publisher": {
+    "name": "Microsoft Publisher",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/publisher",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "photoshop": {
+    "name": "PhotoShop",
+    "url": "https://www.adobe.com/products/photoshop.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "facebook": {
+    "name": "Facebook",
+    "url": "https://www.facebook.com/",
+    "img": "",
+    "categoryIDs": [
+      "social-media"
+    ],
+    "jobIDs": []
+  },
+  "twitter": {
+    "name": "Twitter",
+    "url": "https://twitter.com/",
+    "img": "",
+    "categoryIDs": [
+      "social-media"
+    ],
+    "jobIDs": []
+  },
+  "wordpress": {
+    "name": "WordPress",
+    "url": "https://wordpress.org/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "linkedin": {
+    "name": "LinkedIn",
+    "url": "https://www.linkedin.com/",
+    "img": "",
+    "categoryIDs": [
+      "social-media"
+    ],
+    "jobIDs": []
+  },
+  "foursquare": {
+    "name": "Foursquare",
+    "url": "https://foursquare.com/",
+    "img": "",
+    "categoryIDs": [
+      "social-media"
+    ],
+    "jobIDs": []
+  },
+  "hootsuite": {
+    "name": "HootSuite",
+    "url": "https://www.hootsuite.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool",
+      "social-media"
+    ],
+    "jobIDs": []
+  },
+  "3bl-media": {
+    "name": "3BL Media",
+    "url": "https://www.3blmedia.com/",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  }
+}

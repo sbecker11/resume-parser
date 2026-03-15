@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-resume-to-flock: Parse resume (DOCX/PDF) into flock-of-postcards jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs.
+resume-to-flock: Parse resume (DOCX/PDF) into flock-of-postcards jobs.json, skills.json, categories.json, other-sections.json.
 
 Usage:
   python resume_to_flock.py <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
 
-  --output-dir   Where to write .mjs files (and optional resume copy)
+  --output-dir   Where to write .json files (and optional resume copy)
   --no-llm       Skip LLM calls; use extraction only (for testing)
   --no-enrich    Skip LLM skill URL enrichment
   --no-merge     Skip skill merge step (non-interactive)
   --provider     Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY
-  --render       After writing .mjs, run render_resume_html to generate resume.html
+  --render       After writing .json, run render_resume_html to generate resume.html
 """
 
 import argparse
@@ -61,29 +61,27 @@ def _default_output_dir() -> Path:
     return Path.cwd()
 
 
-def _write_mjs_export(path: Path, var_name: str, data: dict | list, out_dir: Path) -> Path:
-    """Write export const varName = ...; (resume-flock format)."""
+def _write_json(path: Path, data: dict | list, out_dir: Path) -> Path:
+    """Write data as UTF-8 JSON (resume-flock format)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write(f"export const {var_name} = ")
-        f.write(json.dumps(data, ensure_ascii=False))
-        f.write(";")
+        json.dump(data, f, ensure_ascii=False, indent=2)
     return path
 
 
-def _write_jobs_mjs(jobs: dict[str, dict], out_dir: Path) -> Path:
+def _write_jobs_json(jobs: dict[str, dict], out_dir: Path) -> Path:
     """Write jobs dict keyed by jobID (resume-flock format)."""
-    return _write_mjs_export(out_dir / "jobs.mjs", "jobs", jobs, out_dir)
+    return _write_json(out_dir / "jobs.json", jobs, out_dir)
 
 
-def _write_skills_mjs(skills_by_id: dict[str, dict], out_dir: Path) -> Path:
+def _write_skills_json(skills_by_id: dict[str, dict], out_dir: Path) -> Path:
     """Write skills dict keyed by skillID (resume-flock format)."""
-    return _write_mjs_export(out_dir / "skills.mjs", "skills", skills_by_id, out_dir)
+    return _write_json(out_dir / "skills.json", skills_by_id, out_dir)
 
 
-def _write_categories_mjs(categories: dict[str, dict], out_dir: Path) -> Path:
+def _write_categories_json(categories: dict[str, dict], out_dir: Path) -> Path:
     """Write categories dict (resume-flock format)."""
-    return _write_mjs_export(out_dir / "categories.mjs", "categories", categories, out_dir)
+    return _write_json(out_dir / "categories.json", categories, out_dir)
 
 
 def _build_other_sections_for_flock(resume_meta: dict) -> dict:
@@ -119,10 +117,10 @@ def _build_other_sections_for_flock(resume_meta: dict) -> dict:
     }
 
 
-def _write_other_sections_mjs(resume_meta: dict, out_dir: Path) -> Path:
-    """Write otherSections in resume-flock schema."""
+def _write_other_sections_json(resume_meta: dict, out_dir: Path) -> Path:
+    """Write other-sections.json in resume-flock schema."""
     other = _build_other_sections_for_flock(resume_meta)
-    return _write_mjs_export(out_dir / "other-sections.mjs", "otherSections", other, out_dir)
+    return _write_json(out_dir / "other-sections.json", other, out_dir)
 
 
 def _write_meta_json(
@@ -189,7 +187,7 @@ def main() -> int:
     parser.add_argument(
         "--render",
         action="store_true",
-        help="After writing .mjs, run render_resume_html.py to generate resume.html",
+        help="After writing .json, run render_resume_html.py to generate resume.html",
     )
     args = parser.parse_args()
 
@@ -238,7 +236,7 @@ def main() -> int:
     except (RuntimeError, json.JSONDecodeError) as e:
         print(f"Warning: could not parse resume sections: {e}", file=sys.stderr)
 
-    # Expand "Name (a, b, c)" -> "Name a", "Name b", "Name c" in skills list (for other-sections.mjs and skills dict)
+    # Expand "Name (a, b, c)" -> "Name a", "Name b", "Name c" in skills list (for other-sections.json and skills dict)
     if resume_meta.get("skills"):
         resume_meta["skills"] = [
             n
@@ -326,11 +324,11 @@ def main() -> int:
     if args.resume.resolve() != resume_copy_path.resolve():
         shutil.copy2(args.resume, resume_copy_path)
 
-    # Write output: jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs, meta.json
-    jobs_path = _write_jobs_mjs(jobs_by_id, out_dir)
-    skills_path = _write_skills_mjs(skills_by_id, out_dir)
-    categories_path = _write_categories_mjs(categories, out_dir)
-    other_path = _write_other_sections_mjs(resume_meta, out_dir)
+    # Write output: jobs.json, skills.json, categories.json, other-sections.json, meta.json
+    jobs_path = _write_jobs_json(jobs_by_id, out_dir)
+    skills_path = _write_skills_json(skills_by_id, out_dir)
+    categories_path = _write_categories_json(categories, out_dir)
+    other_path = _write_other_sections_json(resume_meta, out_dir)
     resume_id = args.id if args.id else out_dir.name
     display_name = (resume_meta.get("contact") or {}).get("name") or args.resume.stem or "Resume"
     meta_path = _write_meta_json(

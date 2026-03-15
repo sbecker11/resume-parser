@@ -1,1 +1,1 @@
-sed 's/^const jobs = //;s/;$//' ../out/jobs.mjs | jq .
+jq . ../out/jobs.json

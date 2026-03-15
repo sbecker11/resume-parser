@@ -1,0 +1,42 @@
+{
+  "language": {
+    "name": "Language",
+    "skillIDs": [
+      "spanish",
+      "proficient-in-spanish"
+    ]
+  },
+  "platform": {
+    "name": "Platform",
+    "skillIDs": [
+      "mac-and-pc-platforms"
+    ]
+  },
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "excel",
+      "powerpoint"
+    ]
+  },
+  "programming-language": {
+    "name": "Programming Language",
+    "skillIDs": [
+      "html",
+      "javascript"
+    ]
+  },
+  "frontend": {
+    "name": "Frontend",
+    "skillIDs": [
+      "html",
+      "javascript"
+    ]
+  },
+  "backend": {
+    "name": "Backend",
+    "skillIDs": [
+      "javascript"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "contact": {
+    "name": "Kenya Rios",
+    "email": "student@stanford.edu",
+    "phone": "650.123.4567",
+    "location": "PO Box 12345 • Stanford, CA 94309",
+    "linkedin": "",
+    "website": ""
+  },
+  "title": "",
+  "summary": "",
+  "certifications": [],
+  "websites": [],
+  "custom_sections": [
+    {
+      "title": "OTHER LEADERSHIP EXPERIENCE AND ACTIVITIES",
+      "content": "Vice President / Philanthropy Chair—Kappa Kappa Gamma Sorority, Stanford University\nProduction Intern—Stanford Film Society short film: \"Sold America\"\nCourse Instructor—Modern French Cinema, Stanford University\nPeer Academic Advisor—Stanford University\nVolunteer Dance Instructor—Bay Area Boys and Girls Club\nWriter—contribute to Womenspeak and Black Arts Quarterly publications, Stanford University"
+    }
+  ],
+  "skills": [
+    "Drupal web design",
+    "Photoshop",
+    "Illustrator",
+    "InDesign",
+    "French"
+  ]
+}

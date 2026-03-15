@@ -1,0 +1,38 @@
+{
+  "excel": {
+    "name": "Excel",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/excel",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": [
+      0
+    ]
+  },
+  "powerpoint": {
+    "name": "PowerPoint",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/powerpoint",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": []
+  },
+  "filemaker": {
+    "name": "FileMaker",
+    "url": "https://www.claris.com/filemaker/",
+    "img": "",
+    "categoryIDs": [
+      "database"
+    ],
+    "jobIDs": []
+  },
+  "french": {
+    "name": "French",
+    "url": "https://www.diplomatie.gouv.fr/en/french-foreign-policy/francophony-and-french-language/",
+    "img": "",
+    "categoryIDs": [],
+    "jobIDs": []
+  }
+}

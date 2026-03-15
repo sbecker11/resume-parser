@@ -1,0 +1,72 @@
+{
+  "0": {
+    "index": 0,
+    "role": "Resident Assistant",
+    "employer": "Madera House, Stanford University",
+    "start": "2024-09-01",
+    "end": "CURRENT_DATE",
+    "z-index": 1,
+    "css name": "darkforest",
+    "css RGB": "#116611",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Work with a staff of four resident assistants in an 88-student, freshman dormitory • Create, plan and implement academic, cultural and social activities with the students • Encourage and facilitate discussion of social, political and ethical questions among the students • Build community spirit and guide residents in assuming responsibility • Coordinator for \"Madera Makes Music,\" a weekly educational program during winter quarter • Schedule performances, organize the budget and create publicity",
+    "skillIDs": []
+  },
+  "1": {
+    "index": 1,
+    "role": "Visual Display Artist/Salesperson",
+    "employer": "The Gap",
+    "start": "2023-10-01",
+    "end": "2024-06-30",
+    "z-index": 2,
+    "css name": "darkcyan",
+    "css RGB": "#0069AC",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Designed and assembled window and floor displays • Assisted customers with selection and purchase of merchandise",
+    "skillIDs": []
+  },
+  "2": {
+    "index": 2,
+    "role": "Vice President",
+    "employer": "Delta Gamma Sorority, Stanford University",
+    "start": "2024-01-01",
+    "end": "2024-01-31",
+    "z-index": 3,
+    "css name": "darkcyan",
+    "css RGB": "#006688",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Directed planning and implementation of activities for 95 chapter members • Supervised and approved officer budgets • Increased member participation through innovative motivational techniques • Created prototype for annual chapter retreat and member recognition program • Organized rush activities",
+    "skillIDs": []
+  },
+  "3": {
+    "index": 3,
+    "role": "Entrepreneur",
+    "employer": "The Sewing Studio",
+    "start": "2023-06-01",
+    "end": "2024-06-30",
+    "z-index": 1,
+    "css name": "blue",
+    "css RGB": "#0000ff",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Created business offering fashion design and clothing construction courses to home-sewers • Developed advertising strategies, coordinated class schedules, and taught classes • Expanded into a business with $200,000 in annual gross sales of merchandise and services",
+    "skillIDs": []
+  },
+  "4": {
+    "index": 4,
+    "role": "Administrative Intern",
+    "employer": "U.S. Congressman Eugene Chappie",
+    "start": "2023-07-01",
+    "end": "2023-09-30",
+    "z-index": 2,
+    "css name": "mediumblue",
+    "css RGB": "#4400cd",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Developed computer cataloging system for constituent request files • Researched local, state, and national issues for congressional use",
+    "skillIDs": []
+  }
+}

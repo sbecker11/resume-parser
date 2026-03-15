@@ -1,0 +1,14 @@
+{
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "pagemaker"
+    ]
+  },
+  "data-science": {
+    "name": "Data Science",
+    "skillIDs": [
+      "dna"
+    ]
+  }
+}

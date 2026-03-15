@@ -1,0 +1,10 @@
+{
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "mac-and-pc-software-applications",
+      "excel",
+      "powerpoint"
+    ]
+  }
+}

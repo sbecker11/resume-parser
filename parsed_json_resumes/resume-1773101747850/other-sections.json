@@ -1,0 +1,55 @@
+{
+  "contact": {
+    "name": "Student Name",
+    "email": "firstname.lastname@gmail.com",
+    "phone": "512‐555‐1212",
+    "location": "",
+    "linkedin": "personalized link here",
+    "website": ""
+  },
+  "title": "",
+  "summary": "",
+  "certifications": [],
+  "websites": [],
+  "custom_sections": [
+    {
+      "title": "AFFILIATIONS",
+      "content": "Public Relations Student Society of America, Member September 2017–Present\nInternational Association of Business Communicators, Member May 2016–Present\nLoyola University New Orleans Communication Council, Member September 2018 – May 2019"
+    }
+  ],
+  "skills": [
+    "News releases",
+    "Media alerts",
+    "Biographies",
+    "Client profiles",
+    "Fact sheets",
+    "Backgrounders",
+    "PSAs",
+    "Pitch letters",
+    "Briefs",
+    "Executive summaries",
+    "Memoranda",
+    "Media Map",
+    "Ed Cals",
+    "Bacon's",
+    "Dow Jones Interactive",
+    "Lexis‐Nexis",
+    "Microsoft Word",
+    "Excel",
+    "PowerPoint",
+    "Outlook",
+    "Access",
+    "FilemakerPro",
+    "InDesign",
+    "Illustrator",
+    "Microsoft Publisher",
+    "PhotoShop",
+    "Facebook",
+    "Twitter",
+    "WordPress",
+    "LinkedIn",
+    "Foursquare",
+    "HootSuite",
+    "3BL Media"
+  ]
+}

@@ -12,7 +12,7 @@ The resume-parser writes a **flattened** output folder (no subfolders). All file
 - **Jobs** dictionary uses **jobID** as primary key. Each job item has: display name (role, employer, etc.), optional list of `skillIDs`.
 - **Categories** dictionary uses **categoryID** as primary key. Each category item has: display name (`name`), optional list of `skillIDs`.
 
-Files written: `jobs.mjs`, `skills.mjs`, `categories.mjs`, `other-sections.mjs`, `resume.html`, `resume_template.html`, plus the original `resume.docx` (or PDF) under its original filename.
+Files written: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, `resume.html`, `resume_template.html`, plus the original `resume.docx` (or PDF) under its original filename.
 
 ## Directory layout (flat)
 
@@ -21,20 +21,20 @@ All parser files at folder root. No subfolders.
 ```
 parsed_resumes/
   <id>/
-    jobs.mjs               # required — parser output (export const jobs = {...}; keyed by jobID)
-    skills.mjs             # optional — parser output (export const skills = {...}; keyed by skillID); if missing, skills = {}
-    categories.mjs         # optional — parser output (export const categories = {...}; keyed by categoryID)
-    other-sections.mjs     # optional — export const otherSections = { ... }
+    jobs.json              # required — parser output (object keyed by jobID)
+    skills.json            # optional — parser output (object keyed by skillID); if missing, skills = {}
+    categories.json        # optional — parser output (object keyed by categoryID)
+    other-sections.json    # optional — object with summary, title, contact, certifications, websites, custom_sections
     meta.json              # optional for load; required for list UI
     resume.docx            # optional — original uploaded document (parser copies here under original filename)
     resume.pdf             # optional — original uploaded document (one of resume.*)
 ```
 
 - **`<id>`**: Opaque identifier. Use lowercase alphanumeric and hyphens (e.g. `parsed-resume-1`). Must not be `default` (reserved for static content).
-- **Jobs**: `jobs.mjs` at folder root. Parser format: dict keyed by jobID; each job has display fields and optional `skillIDs` array. Parsed by `parseMjsExport(content, 'jobs')`.
-- **Skills**: Optional. `skills.mjs` at folder root. Parser format: dict keyed by skillID; each skill has `name`, optional `categoryIDs`, optional `jobIDs`. If missing, the server returns `skills: {}`.
-- **Categories**: Optional. `categories.mjs` at folder root. Parser format: dict keyed by categoryID; each category has `name`, optional `skillIDs`.
-- **other-sections.mjs**: Optional. See "other-sections.mjs schema" below.
+- **Jobs**: `jobs.json` at folder root. Parser format: dict keyed by jobID; each job has display fields and optional `skillIDs` array.
+- **Skills**: Optional. `skills.json` at folder root. Parser format: dict keyed by skillID; each skill has `name`, optional `categoryIDs`, optional `jobIDs`. If missing, the server returns `skills: {}`.
+- **Categories**: Optional. `categories.json` at folder root. Parser format: dict keyed by categoryID; each category has `name`, optional `skillIDs`.
+- **other-sections.json**: Optional. See "other-sections schema" below.
 - **Original doc**: Parser writes a copy of the input resume (DOCX/PDF) into the output folder under its original filename.
 
 ## meta.json schema
@@ -57,7 +57,7 @@ parsed_resumes/
 | `createdAt`   | string | yes      | ISO 8601 (e.g. `2025-03-07T12:00:00.000Z`). |
 | `fileName`    | string | no       | Original file name if uploaded (e.g. `resume.docx`). Omit if no file. |
 | `jobCount`    | number | yes      | Number of jobs: length of `jobs` array if array, or `Object.keys(jobs).length` if dict keyed by jobID. |
-| `skillCount`  | number | yes      | Number of keys in `skills` object in `skills.mjs`. |
+| `skillCount`  | number | yes      | Number of keys in `skills` object in `skills.json`. |
 
 ## Validation rules
 
@@ -66,9 +66,9 @@ parsed_resumes/
 - If present, categories file is an object keyed by categoryID; each category has `name` and optional `skillIDs`.
 - Server returns 404 only if the resume folder or jobs file is missing for a given `id`. `meta.json`, `skills`, and `categories` are optional.
 
-## other-sections.mjs schema
+## other-sections schema
 
-The parser should write `other-sections.mjs` with `export const otherSections = { ... }`. The object may include:
+The parser writes `other-sections.json` (UTF-8 JSON). The object may include:
 
 | Field | Type | Description |
 |-------|------|-------------|

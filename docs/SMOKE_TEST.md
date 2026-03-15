@@ -8,14 +8,14 @@
 
 ---
 
-## 1. Full pipeline (parse → .mjs)
+## 1. Full pipeline (parse → JSON)
 
 ```bash
 python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
 ```
 
 - [ ] Exits without errors
-- [ ] Output folder has: `jobs.mjs`, `skills.mjs`, `categories.mjs`, `other-sections.mjs`
+- [ ] Output folder has: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`
 - [ ] Resume copy exists (same filename)
 
 ---
@@ -27,7 +27,7 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output --no-merg
 ```
 
 - [ ] Runs without prompts
-- [ ] Same four .mjs files generated
+- [ ] Same four .json files generated
 
 ---
 
@@ -54,20 +54,20 @@ python resume_to_flock.py tests/test-resume.docx -o /tmp/resume-output
 - [ ] `y` applies merge and continues
 - [ ] `n` skips and continues
 - [ ] `q` exits the merge loop
-- [ ] Output `skills.mjs` reflects chosen merges
+- [ ] Output `skills.json` reflects chosen merges
 
 ---
 
 ## 5. Standalone HTML render
 
 ```bash
-# Ensure output folder has .mjs files from step 1, 2, or 3
+# Ensure output folder has .json files from step 1, 2, or 3
 python render_resume_html.py -i /tmp/resume-output
 ```
 
 - [ ] Exits without errors
 - [ ] `resume.html` and `resume_template.html` updated
-- [ ] HTML content is consistent with .mjs data
+- [ ] HTML content is consistent with JSON data
 
 ---
 

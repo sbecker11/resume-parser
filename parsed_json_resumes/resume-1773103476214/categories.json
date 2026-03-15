@@ -1,0 +1,26 @@
+{
+  "programming-language": {
+    "name": "Programming Language",
+    "skillIDs": [
+      "r",
+      "java"
+    ]
+  },
+  "data-science": {
+    "name": "Data Science",
+    "skillIDs": [
+      "r",
+      "spss",
+      "excel"
+    ]
+  },
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "spss",
+      "excel",
+      "microsoft-word",
+      "powerpoint"
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "drupal": {
+    "name": "Drupal",
+    "url": "https://www.drupal.org",
+    "img": "",
+    "categoryIDs": [
+      "framework",
+      "backend"
+    ],
+    "jobIDs": [
+      5
+    ]
+  },
+  "photoshop": {
+    "name": "Photoshop",
+    "url": "https://www.adobe.com/products/photoshop.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": [
+      5
+    ]
+  },
+  "illustrator": {
+    "name": "Illustrator",
+    "url": "https://www.adobe.com/products/illustrator.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": [
+      5
+    ]
+  },
+  "indesign": {
+    "name": "InDesign",
+    "url": "https://www.adobe.com/products/indesign.html",
+    "img": "",
+    "categoryIDs": [
+      "tool"
+    ],
+    "jobIDs": [
+      5
+    ]
+  },
+  "drupal-web-design": {
+    "name": "Drupal web design",
+    "url": "https://www.drupal.org",
+    "img": "",
+    "categoryIDs": [
+      "framework",
+      "frontend"
+    ],
+    "jobIDs": []
+  },
+  "french": {
+    "name": "French",
+    "url": "https://www.francophonie.org",
+    "img": "",
+    "categoryIDs": [],
+    "jobIDs": []
+  }
+}

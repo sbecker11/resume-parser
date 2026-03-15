@@ -1,4 +1,4 @@
-"""Tests for render_resume_html.py (HTML generation from .mjs files)."""
+"""Tests for render_resume_html.py (HTML generation from JSON files)."""
 import json
 import tempfile
 import unittest
@@ -7,16 +7,16 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from render_resume_html import render_resume_html, _load_mjs
+from render_resume_html import render_resume_html, _load_json
 
 
 class TestRenderResumeHtml(unittest.TestCase):
-    """Test render_resume_html reads .mjs and writes resume.html."""
+    """Test render_resume_html reads JSON and writes resume.html."""
 
-    def test_renders_html_from_mjs_files(self):
+    def test_renders_html_from_json_files(self):
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            # Write minimal .mjs files
+            # Write minimal JSON files
             jobs = {"0": {"index": 0, "role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "Description": "Did stuff.", "skillIDs": []}}
             skills = {"python": {"name": "Python", "url": "https://python.org", "img": "", "categoryIDs": ["programming-language"], "jobIDs": [0]}}
             categories = {"programming-language": {"name": "Programming Language", "skillIDs": ["python"]}}
@@ -28,10 +28,10 @@ class TestRenderResumeHtml(unittest.TestCase):
                 "skills": ["Python"],
                 "other_sections": [],
             }
-            (out_dir / "jobs.mjs").write_text("const jobs = " + json.dumps(jobs) + ";", encoding="utf-8")
-            (out_dir / "skills.mjs").write_text("const skills = " + json.dumps(skills) + ";", encoding="utf-8")
-            (out_dir / "categories.mjs").write_text("const categories = " + json.dumps(categories) + ";", encoding="utf-8")
-            (out_dir / "other-sections.mjs").write_text("const otherSections = " + json.dumps(other) + ";", encoding="utf-8")
+            (out_dir / "jobs.json").write_text(json.dumps(jobs), encoding="utf-8")
+            (out_dir / "skills.json").write_text(json.dumps(skills), encoding="utf-8")
+            (out_dir / "categories.json").write_text(json.dumps(categories), encoding="utf-8")
+            (out_dir / "other-sections.json").write_text(json.dumps(other), encoding="utf-8")
 
             resume_path, template_path = render_resume_html(out_dir)
             self.assertTrue(resume_path.exists())
@@ -43,46 +43,36 @@ class TestRenderResumeHtml(unittest.TestCase):
             self.assertIn("Python", html)
             self.assertIn("Programming Language", html)
 
-    def test_load_mjs_parses_json(self):
-        with tempfile.NamedTemporaryFile(suffix=".mjs", delete=False) as f:
-            f.write(b'const jobs = {"0": {"role": "Dev"}};')
+    def test_load_json_parses(self):
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            f.write(b'{"0": {"role": "Dev"}}')
             f.flush()
         try:
-            data = _load_mjs(Path(f.name), "jobs")
+            data = _load_json(Path(f.name))
             self.assertEqual(data, {"0": {"role": "Dev"}})
         finally:
             Path(f.name).unlink(missing_ok=True)
 
-    def test_load_mjs_accepts_export_const(self):
-        with tempfile.NamedTemporaryFile(suffix=".mjs", delete=False) as f:
-            f.write(b'export const jobs = {"0": {"role": "Dev"}};')
-            f.flush()
-        try:
-            data = _load_mjs(Path(f.name), "jobs")
-            self.assertEqual(data, {"0": {"role": "Dev"}})
-        finally:
-            Path(f.name).unlink(missing_ok=True)
-
-    def test_missing_mjs_raises(self):
+    def test_missing_json_raises(self):
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
             with self.assertRaises(FileNotFoundError):
                 render_resume_html(out_dir)
 
-    def _write_mjs(self, out_dir: Path, jobs: dict, skills: dict, categories: dict, other: dict):
-        (out_dir / "jobs.mjs").write_text("const jobs = " + json.dumps(jobs) + ";", encoding="utf-8")
-        (out_dir / "skills.mjs").write_text("const skills = " + json.dumps(skills) + ";", encoding="utf-8")
-        (out_dir / "categories.mjs").write_text("const categories = " + json.dumps(categories) + ";", encoding="utf-8")
-        (out_dir / "other-sections.mjs").write_text("const otherSections = " + json.dumps(other) + ";", encoding="utf-8")
+    def _write_json_files(self, out_dir: Path, jobs: dict, skills: dict, categories: dict, other: dict):
+        (out_dir / "jobs.json").write_text(json.dumps(jobs), encoding="utf-8")
+        (out_dir / "skills.json").write_text(json.dumps(skills), encoding="utf-8")
+        (out_dir / "categories.json").write_text(json.dumps(categories), encoding="utf-8")
+        (out_dir / "other-sections.json").write_text(json.dumps(other), encoding="utf-8")
 
-    def test_description_bullets_from_mjs(self):
+    def test_description_bullets_from_json(self):
         jobs = {"0": {"index": 0, "role": "R", "employer": "E", "start": "", "end": "", "Description": "First sentence. Second sentence. Third.", "skillIDs": []}}
         skills = {}
         categories = {}
         other = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            self._write_mjs(out_dir, jobs, skills, categories, other)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
             resume_path, _ = render_resume_html(out_dir)
             html = resume_path.read_text()
             self.assertIn("First sentence", html)
@@ -98,7 +88,7 @@ class TestRenderResumeHtml(unittest.TestCase):
         other = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            self._write_mjs(out_dir, jobs, skills, categories, other)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
             resume_path, _ = render_resume_html(out_dir)
             html = resume_path.read_text()
             self.assertIn("Other", html)
@@ -111,7 +101,7 @@ class TestRenderResumeHtml(unittest.TestCase):
         other = {"contact": {}, "title": "", "summary": "See https://example.com for more.", "certifications": [], "skills": [], "other_sections": []}
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            self._write_mjs(out_dir, jobs, skills, categories, other)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
             resume_path, _ = render_resume_html(out_dir)
             html = resume_path.read_text()
             self.assertIn('href="https://example.com"', html)
@@ -133,7 +123,7 @@ class TestRenderResumeHtml(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            self._write_mjs(out_dir, jobs, skills, categories, other)
+            self._write_json_files(out_dir, jobs, skills, categories, other)
             resume_path, _ = render_resume_html(out_dir)
             html = resume_path.read_text()
             self.assertIn("Jane Doe", html)

@@ -383,7 +383,7 @@ def assign_skill_ids(skills: dict[str, dict[str, Any]]) -> None:
 
 def jobs_to_flock_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
-    Convert parsed jobs to flock-of-postcards jobs.mjs format.
+    Convert parsed jobs to flock-of-postcards jobs.json format.
     Adds index, z-index, css name, css RGB, text color, Description.
     """
     result = []

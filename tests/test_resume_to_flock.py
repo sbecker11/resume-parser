@@ -1,6 +1,5 @@
 """Tests for resume_to_flock.py to achieve >= 80% coverage."""
 import json
-import re
 import sys
 import tempfile
 import unittest
@@ -11,10 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from resume_to_flock import (
     _default_output_dir,
-    _write_jobs_mjs,
-    _write_skills_mjs,
-    _write_categories_mjs,
-    _write_other_sections_mjs,
+    _write_jobs_json,
+    _write_skills_json,
+    _write_categories_json,
+    _write_other_sections_json,
     _write_meta_json,
     main,
 )
@@ -37,45 +36,49 @@ class TestDefaultOutputDir(unittest.TestCase):
 
 
 class TestWriters(unittest.TestCase):
-    def test_write_jobs_mjs(self):
+    def test_write_jobs_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
             jobs = {"0": {"index": 0, "role": "Engineer", "skillIDs": []}}
-            path = _write_jobs_mjs(jobs, out)
+            path = _write_jobs_json(jobs, out)
             self.assertTrue(path.exists())
-            self.assertIn("export const jobs = ", path.read_text())
-            self.assertIn("Engineer", path.read_text())
+            self.assertEqual(path.suffix, ".json")
+            data = json.loads(path.read_text())
+            self.assertEqual(data["0"]["role"], "Engineer")
 
-    def test_write_skills_mjs(self):
+    def test_write_skills_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
-            # skills dict is keyed by skillID; each item has "name" (display name)
             skills_by_id = {"python": {"name": "Python", "url": "", "img": "", "categoryIDs": [], "jobIDs": []}}
-            path = _write_skills_mjs(skills_by_id, out)
+            path = _write_skills_json(skills_by_id, out)
             self.assertTrue(path.exists())
-            text = path.read_text()
-            self.assertIn("export const skills = ", text)
-            self.assertIn("python", text)
-            self.assertIn("Python", text)
+            self.assertEqual(path.suffix, ".json")
+            data = json.loads(path.read_text())
+            self.assertIn("python", data)
+            self.assertEqual(data["python"]["name"], "Python")
 
-    def test_write_categories_mjs(self):
+    def test_write_categories_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
             categories = {"lang": {"name": "Language", "skillIDs": ["python"]}}
-            path = _write_categories_mjs(categories, out)
+            path = _write_categories_json(categories, out)
             self.assertTrue(path.exists())
-            self.assertIn("export const categories = ", path.read_text())
+            self.assertEqual(path.suffix, ".json")
+            data = json.loads(path.read_text())
+            self.assertEqual(data["lang"]["name"], "Language")
 
-    def test_write_other_sections_mjs(self):
+    def test_write_other_sections_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
             meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
-            path = _write_other_sections_mjs(meta, out)
+            path = _write_other_sections_json(meta, out)
             self.assertTrue(path.exists())
-            self.assertIn("export const otherSections = ", path.read_text())
+            self.assertEqual(path.suffix, ".json")
+            data = json.loads(path.read_text())
+            self.assertIn("contact", data)
 
     def test_other_sections_resume_flock_schema(self):
-        """other-sections.mjs output matches PARSED-RESUME-FORMAT: certifications {name,url,description}, websites, custom_sections."""
+        """other-sections.json output matches PARSED-RESUME-FORMAT: certifications {name,url,description}, websites, custom_sections."""
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
             meta = {
@@ -89,11 +92,8 @@ class TestWriters(unittest.TestCase):
                 "websites": [{"label": "LinkedIn", "url": "https://linkedin.com/in/jane"}],
                 "other_sections": [{"title": "Awards", "content": "Best dev 2024"}],
             }
-            path = _write_other_sections_mjs(meta, out)
-            text = path.read_text()
-            m = re.search(r"export const otherSections = (.+);\s*$", text, re.DOTALL)
-            self.assertIsNotNone(m)
-            data = json.loads(m.group(1))
+            path = _write_other_sections_json(meta, out)
+            data = json.loads(path.read_text())
             self.assertEqual(data["contact"]["name"], "Jane")
             self.assertEqual(data["title"], "Engineer")
             self.assertEqual(data["summary"], "Summary.")
@@ -183,10 +183,10 @@ class TestMain(unittest.TestCase):
                 copy_size = resume_copy.stat().st_size
                 self.assertEqual(copy_size, orig_size, f"Copy file size {copy_size} should match original {orig_size}")
                 self.assertEqual(resume_copy.read_bytes(), Path(resume_path).read_bytes(), "Copy should match original")
-                self.assertTrue((out_dir / "jobs.mjs").exists())
-                self.assertTrue((out_dir / "skills.mjs").exists())
-                self.assertTrue((out_dir / "categories.mjs").exists())
-                self.assertTrue((out_dir / "other-sections.mjs").exists())
+                self.assertTrue((out_dir / "jobs.json").exists())
+                self.assertTrue((out_dir / "skills.json").exists())
+                self.assertTrue((out_dir / "categories.json").exists())
+                self.assertTrue((out_dir / "other-sections.json").exists())
                 self.assertTrue((out_dir / "resume.html").exists())
                 self.assertTrue((out_dir / "resume_template.html").exists())
                 self.assertTrue((out_dir / "meta.json").exists())

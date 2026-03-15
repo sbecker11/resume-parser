@@ -1,0 +1,29 @@
+{
+  "framework": {
+    "name": "Framework",
+    "skillIDs": [
+      "drupal",
+      "drupal-web-design"
+    ]
+  },
+  "backend": {
+    "name": "Backend",
+    "skillIDs": [
+      "drupal"
+    ]
+  },
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "photoshop",
+      "illustrator",
+      "indesign"
+    ]
+  },
+  "frontend": {
+    "name": "Frontend",
+    "skillIDs": [
+      "drupal-web-design"
+    ]
+  }
+}

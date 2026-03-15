@@ -1,0 +1,32 @@
+{
+  "contact": {
+    "name": "Janette Powell",
+    "email": "jan@stanford.edu",
+    "phone": "(650) 555-1234",
+    "location": "P.O. Box 2738 • Stanford, CA 94309",
+    "linkedin": "linkedin.com/in/janettecampbell",
+    "website": ""
+  },
+  "title": "",
+  "summary": "",
+  "certifications": [],
+  "websites": [
+    {
+      "label": "LinkedIn",
+      "url": "https://linkedin.com/in/janettecampbell"
+    }
+  ],
+  "custom_sections": [
+    {
+      "title": "Additional Information",
+      "content": "• Division I Varsity Athlete, Women's Water Polo, Stanford University\n• Familiar with Mac and PC software applications including Excel and PowerPoint\n• Proficient in Spanish, basic skills in French\n• Have travelled extensively throughout Europe"
+    }
+  ],
+  "skills": [
+    "Mac and PC software applications",
+    "Excel",
+    "PowerPoint",
+    "Spanish proficient",
+    "French basic skills"
+  ]
+}

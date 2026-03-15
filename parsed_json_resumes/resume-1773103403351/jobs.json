@@ -1,0 +1,102 @@
+{
+  "0": {
+    "index": 0,
+    "role": "Research Assistant",
+    "employer": "National Economic Research Associates (NERA)",
+    "start": "2006-06-01",
+    "end": "2006-08-31",
+    "z-index": 1,
+    "css name": "darkforest",
+    "css RGB": "#116611",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Worked with a team of four other researchers on cases relating to antitrust, intellectual property and labor economics • Conducted quantitative and qualitative research, collected and analyzed data • Created and managed spreadsheets using [Excel]",
+    "skillIDs": [
+      "excel"
+    ]
+  },
+  "1": {
+    "index": 1,
+    "role": "Summer Analyst",
+    "employer": "Galleon Group",
+    "start": "2005-06-01",
+    "end": "2005-08-31",
+    "z-index": 2,
+    "css name": "darkcyan",
+    "css RGB": "#0069AC",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Assigned to track a group of technology companies for the New York based hedge fund • Worked with three other analysts in collecting and analyzing relevant financial statistics • Performed qualitative research to form an assessment of the current status of the companies",
+    "skillIDs": []
+  },
+  "2": {
+    "index": 2,
+    "role": "Economics Tutor",
+    "employer": "Undergraduate Advising and Research, Stanford University",
+    "start": "2005-05-01",
+    "end": "2005-06-30",
+    "z-index": 3,
+    "css name": "darkcyan",
+    "css RGB": "#006688",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Assisted students with understanding concepts and solving problems in micro and macro economics, econometrics and statistics • Organized review sessions and prepared practice problems for upcoming exams",
+    "skillIDs": []
+  },
+  "3": {
+    "index": 3,
+    "role": "Business Intern",
+    "employer": "American International Group (AIG)",
+    "start": "2004-07-01",
+    "end": "2004-09-30",
+    "z-index": 1,
+    "css name": "blue",
+    "css RGB": "#0000ff",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Developed a business analysis on a foreign company, located in Sri Lanka, with which AIG had recently formed a joint venture • Wrote a report on Sri Lanka's insurance sector, focusing on privatization of insurance companies and on a recent merger between two insurance companies",
+    "skillIDs": []
+  },
+  "4": {
+    "index": 4,
+    "role": "Staff Editor",
+    "employer": "Undergraduate Journal of International Relations",
+    "start": "2005-04-01",
+    "end": "CURRENT_DATE",
+    "z-index": 2,
+    "css name": "mediumblue",
+    "css RGB": "#4400cd",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Review and edit articles relating to capital inflows and international trade in emerging economies • Help with distributing the journal to think tanks, academic institutions, and faculty and students at Stanford",
+    "skillIDs": []
+  },
+  "5": {
+    "index": 5,
+    "role": "Program Director",
+    "employer": "SAT Success, Haas Center for Public Service",
+    "start": "2005-05-01",
+    "end": "CURRENT_DATE",
+    "z-index": 3,
+    "css name": "blueviolet",
+    "css RGB": "#8a2be2",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Coordinate all aspects of the tutoring program including recruitment of tutors and tutees • Organize events to introduce high school students to SAT preparation and the college application process • Conduct training sessions on tutoring the math and verbal sections of the SAT",
+    "skillIDs": []
+  },
+  "6": {
+    "index": 6,
+    "role": "Staff Editor",
+    "employer": "Undergraduate Journal of Philosophy",
+    "start": "2005-01-01",
+    "end": "2005-06-30",
+    "z-index": 1,
+    "css name": "purple",
+    "css RGB": "#800080",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Evaluated, edited and helped select and compile papers for Stanford's undergraduate philosophy journal, The Dualist • Focused on reviewing papers on political philosophy and ethics",
+    "skillIDs": []
+  }
+}

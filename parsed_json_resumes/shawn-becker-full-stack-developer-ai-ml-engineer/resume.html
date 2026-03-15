@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume – SHAWN BECKER</title>
+  <style>
+    :root { --text: #222; --muted: #555; --line: #ddd; --bg: #fff; }
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; color: var(--text); background: var(--bg); max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.4; }
+    @media print { body { padding: 1rem; } }
+    h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem 0; }
+    .title { font-size: 1rem; color: var(--muted); margin-bottom: 1rem; }
+    .contact { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.25rem; }
+    .contact span + span::before { content: ' · '; }
+    .section { margin-bottom: 1.25rem; }
+    .section-head { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
+    .job { margin-bottom: 1rem; }
+    .job-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+    .job-role { font-weight: 700; }
+    .job-employer { font-style: italic; }
+    .job-dates { font-size: 0.9rem; color: var(--muted); }
+    .job-desc { margin-top: 0.35rem; font-size: 0.95rem; }
+    .job-desc ul { margin: 0.25rem 0 0 0; padding-left: 1.25rem; }
+    .job-desc li { margin-bottom: 0.2rem; }
+    .summary { white-space: pre-line; }
+    .skills-by-cat { list-style: disc; padding-left: 1.25rem; font-size: 0.95rem; }
+    .skills-by-cat li { margin-bottom: 0.35rem; }
+    .skills-by-cat .cat-name { font-weight: 600; }
+    .cert { margin-bottom: 0.35rem; }
+    .cert-name { font-weight: 600; }
+    .websites-list { list-style: none; padding-left: 0; margin: 0; }
+    .website-item { margin-bottom: 0.35rem; }
+    .website-label { font-weight: 600; }
+    .other-section { margin-bottom: 1rem; }
+    .other-section .content { white-space: pre-line; font-size: 0.95rem; }
+    a { color: #1967d2; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SHAWN BECKER</h1>
+    <p class="title">Full Stack Developer & AI/ML Engineer</p>
+    <p class="contact">
+      <span><a href="mailto:shawn.becker@spexture.com">shawn.becker@spexture.com</a></span>
+      <span>(857) 891-0896</span>
+      <span>Lehi, UT</span>
+      
+      
+    </p>
+  </header>
+
+  
+  <section class="section">
+    <h2 class="section-head">Summary</h2>
+    <p class="summary">Full stack developer with 20+ years of experience building production-grade applications and AI-powered solutions for Fortune 500 clients. Combines deep AI/ML expertise—including LLM integration, RAG pipelines, and CNN-based classification—with polished front-end development, RESTful API design, and scalable cloud infrastructure on AWS. PhD from MIT in Computer Vision/Computer Graphics.</p>
+  </section>
+  
+
+  
+  <section class="section">
+    <h2 class="section-head">Experience</h2>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Full Stack Developer & AI/ML Engineer</span>
+        <span class="job-dates">2019-11-01 – CURRENT_DATE</span>
+      </div>
+      <div class="job-employer">Spexture / Technical Consulting</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Hands-on technical consulting for Fortune 500 clients including [Adobe], [Fannie Mae], [Warner Bros Games], [Angel Studios], [The Cigna Group], and [NuSkin]—architecting [AI/ML] systems, full-stack applications, and data pipelines on the [AWS] platform.</li><li>Built production [RAG] pipelines using [LangChain] and [ChromaDB] for semantic search and retrieval-augmented generation, with prompt engineering, error analysis, and reliability controls.</li><li>Developed campaign asset automation system integrating [DALL-E 3] for programmatic social media ad generation with prompt engineering and quality controls.</li><li>Created &#34;Flock of Postcards&#34; sbecker11.github.io/flock-of-postcards—an interactive [JavaScript] visualization with 3D motion parallax, animated transitions, depth-of-field effects, and a data-driven [Excel]-to-[JS] content pipeline. 310 commits across 11 iterative versions.</li><li>Built Color Palette Maker github.com/sbecker11/color-palette-maker-react—a [React 19]/[Node.js]/[Python] app with a multi-stage [CV] pipeline: 5-strategy [OpenCV] region detection, region-masked [K-means clustering], and [CIEDE2000] perceptual color matching. Full test suite, [Dockerized], [CI/CD], with [Docker Compose] and [Kubernetes] migration plans.</li><li>[GitHub Actions] for automated end-to-end [CI/CD] pipelines; [AWS Glue] and [PySpark] for data cleansing, lineage tracking, and governance.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2025-03-01 – 2025-07-01</span>
+      </div>
+      <div class="job-employer">Adobe / Data Analytics</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Refactored and extended legacy [Python]/[Django] [REST APIs] for [Adobe&#39;s] global [SEO] platform, reducing technical debt and improving maintainability within the Data Analytics division.</li><li>Developed new [REST API] endpoints backed by [PostgreSQL] on [AWS Aurora], with comprehensive [Python] unit tests to ensure reliability and code coverage.</li><li>Built admin tooling to streamline [SEO] platform management workflows, collaborating with cross-functional product and analytics teams.</li><li>Coordinated with [Adobe&#39;s] system security team to configure [AWS IAM] role access for development and testing of platform services.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2024-03-01 – 2024-07-01</span>
+      </div>
+      <div class="job-employer">Fannie Mae / Risk Works Analysis Data Lake</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Created [dbt]-validated [SQL] code for data cleansing and data lake ingestion using [AWS Redshift], [Glue], [Airflow], [S3], and [Lambda].</li><li>Used [Amazon Glue] to track schema changes and revise [Redshift] external views; created custom views for analysis and reporting.</li><li>Utilized [Python] to consolidate multiple spreadsheets of industrial automation data into final, client-ready reports.</li><li>Documented processes to build, test, and deploy data pipeline components for in-house [ETL] framework.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Software Engineer</span>
+        <span class="job-dates">2023-06-01 – 2023-12-01</span>
+      </div>
+      <div class="job-employer">The Cigna Group / Data Cybersecurity</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Modernized apps via [Jenkins] [CI/CD] pipeline upgrade, integrating [SetupTools], [Artifactory]/[PyPI], [SonarQube], and [Xray].</li><li>Created custom application generator producing templates with [Terraform] and pipeline-related files for new applications.</li><li>Engineered [Python] [REST API] integration enabling credential retrieval from [CyberArk&#39;s] identity management platform using mutual [SSL/TLS] authentication, reducing password rollover costs by 95%.</li><li>Investigated migration of legacy on-prem [ETL] pipeline components to serverless [AWS] cloud using [Kafka], [Airflow], and [FiveTran].</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2022-09-01 – 2023-04-01</span>
+      </div>
+      <div class="job-employer">Warner Brothers Interactive Entertainment</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Integrated [Segment CDP] with user in-game telemetry, purchase history, and [Salesforce] profiles for unified customer identity resolution across marketing platforms.</li><li>Built segmented user population groupings for targeted advertising campaigns, with audience sharing to [Google Ads], [YouTube], and advertising partners.</li><li>Utilized [Python] to integrate with third-party marketing platforms using [REST APIs] and direct connections to [Google BigQuery], [AWS] services, [Salesforce], and [Snowflake].</li><li>Created status dashboards using [DataDog] and [Amazon QuickSight]; implemented integrations with [Jenkins] and [ZenDesk].</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2021-12-01 – 2022-08-01</span>
+      </div>
+      <div class="job-employer">Angel Studios</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Designed and deployed a production [CNN]-based video classification system using [PyTorch] on [AWS SageMaker] for automated content tagging, enabling a new revenue opportunity through frame-level categorization.</li><li>Conducted data exploration with [ML] algorithms using [Jupyter], [Python], [Pandas], [NumPy], [Scikit-Learn], and [Keras]; visualized results with [Amazon QuickSight] and [Plotly].</li><li>Created [RESTful APIs] to exchange data with external e-commerce and advertising partners.</li><li>Developed business intelligence reports using [Looker] and [Tableau] with [Snowflake] and [Redshift] for sales and finance reporting.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2020-11-01 – 2021-11-01</span>
+      </div>
+      <div class="job-employer">Greenseed Data Laboratory</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Conducted advanced statistical exploration of real-estate sales data using [Python], [Pandas], [NumPy], [SciPy], and [Scikit-learn].</li><li>Developed batch automation program transforming months of manual project duplication and text replacement into minutes.</li><li>Implemented [CI/CD] pipeline using [GitHub Actions] with [Coverage], [SonarQube], and [Xray]; used [Terraform] and [Helm] for environment management.</li><li>Managed [RESTful APIs] for data exchange with real-estate data teams and customers.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Full Stack Developer</span>
+        <span class="job-dates">2019-11-01 – 2020-11-01</span>
+      </div>
+      <div class="job-employer">NuSkin</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Redesigned and optimized site registration and login workflows by designing wireframes and collaborating with [UX] designers for improved conversion and usability.</li><li>Developed reusable [Vue.js]/[Vuetify] components with [Node.js] and [SCSS] for improved functionality; documented and launched new packages for company-wide use.</li><li>Internationalized web content and unified customer data using [Adobe Experience Cloud], [CDP], and [XDM] for personalized global user experiences.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Senior Data Engineer</span>
+        <span class="job-dates">2017-03-01 – 2019-11-01</span>
+      </div>
+      <div class="job-employer">SeniorLink / Vela</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Designed and deployed an [AWS] data pipeline for the [Vela] healthcare platform, providing messaging, communication, and collaboration tools for the healthcare industry.</li><li>Defined [RESTful APIs] for daily caregiver questionnaire submission and data retrieval through web applications.</li><li>Managed data ingress by queueing [API Gateway] messages via [Kinesis] streams, transforming to [Parquet] in [S3], and processing with [PySpark] on [EMR] for [Redshift] loading.</li><li>Ensured privacy and encryption standards for [PII], [PHI], [PCI], Patient Data, [FHIR], and [HL7], as well as [HIPAA] and [GDPR] compliance.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Technical Lead, Co-Founder</span>
+        <span class="job-dates">2011-02-01 – 2017-03-01</span>
+      </div>
+      <div class="job-employer">ClipFile</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Spearheaded development of an [NLP]-based platform for user preference analysis from curated books, articles, websites, and quotes.</li><li>Used vectorization, eigenvector decomposition for dimensionality reduction, and [K-means] [Bayesian] clustering for collaborative filtering to find content and users with similar preferences.</li><li>Co-authored three patents for [NLP]-based recommendation systems using vector embeddings and cosine similarity.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <div class="job">
+      <div class="job-header">
+        <span class="job-role">Technical Lead, Co-Founder</span>
+        <span class="job-dates">2002-11-01 – 2011-02-01</span>
+      </div>
+      <div class="job-employer">Sierra Vista Group</div>
+      
+      <div class="job-desc">
+        <ul>
+          <li>Founded boutique consulting firm serving clients in entertainment, medical services, manufacturing, insurance, and cybersecurity including [AMI], [Coca-Cola Corp. Europe], [Medical Services Corp.], and [Intrusic Cyber Security].</li><li>Identified profitable opportunities in product development and software engineering; negotiated budgets and milestones with C-level management.</li><li>Architected full-internet and low-bandwidth cache-and-sync [IoT] solutions for enterprise systems with mobile devices.</li>
+        </ul>
+      </div>
+      
+    </div>
+    
+  </section>
+  
+
+  
+  <section class="section">
+    <h2 class="section-head">Skills</h2>
+    <ul class="skills-by-cat">
+      
+      <li><span class="cat-name">Tool</span>: Adobe, Excel, Docker Compose, Kubernetes, GitHub Actions, AWS Glue, Adobe's, SEO, AWS IAM, dbt, Glue, Airflow, Amazon Glue, Jenkins, SetupTools, Artifactory, PyPI, SonarQube, Xray, Terraform, CyberArk's, SSL/TLS, Kafka, FiveTran, Segment CDP, Salesforce, Google Ads, YouTube, DataDog, Amazon QuickSight, ZenDesk, Jupyter, Looker, Tableau, Coverage, Helm, Adobe Experience Cloud, CDP, XDM, Vela, Parquet, FHIR, HL7, IoT, Vite, Apache Spark, Docker, CloudFormation, CI/CD GitHub Actions, CI/CD Jenkins, Vitest, Identity Resolution, CyberArk, Jira, Confluence, UML Diagrams</li>
+      
+      <li><span class="cat-name">Data Science</span>: AI/ML, RAG, LangChain, DALL-E 3, CV, OpenCV, K-means clustering, CIEDE2000, PySpark, dbt, ETL, FiveTran, Amazon QuickSight, CNN, PyTorch, AWS SageMaker, ML, Jupyter, Pandas, NumPy, Scikit-Learn, Keras, Plotly, Looker, Tableau, SciPy, Scikit-learn, Parquet, NLP, K-means, Bayesian, LLM, Computer Vision, K-means Clustering, TensorFlow, Apache Spark, ETL/ELT, Data Modeling, Dimensional Modeling</li>
+      
+      <li><span class="cat-name">Cloud</span>: AWS, AWS Glue, AWS Aurora, AWS IAM, AWS Redshift, Glue, S3, Lambda, Amazon Glue, Redshift, Google BigQuery, Snowflake, AWS SageMaker, API Gateway, Kinesis, EMR, AMI, DynamoDB, AWS S3, AWS EC2, AWS Lambda, AWS EMR, AWS Kinesis, AWS ECS, AWS EKS, AWS Fargate, CloudFormation</li>
+      
+      <li><span class="cat-name">Library</span>: LangChain, OpenCV, PySpark, PyTorch, Pandas, NumPy, Scikit-Learn, Keras, Plotly, SciPy, Scikit-learn, TensorFlow, React Testing Library</li>
+      
+      <li><span class="cat-name">Database</span>: ChromaDB, PostgreSQL, AWS Aurora, AWS Redshift, Redshift, Google BigQuery, Snowflake, NoSQL, DynamoDB, Schema Evolution</li>
+      
+      <li><span class="cat-name">Programming Language</span>: JavaScript, JS, Python, SQL, SCSS, TypeScript, Java</li>
+      
+      <li><span class="cat-name">Framework</span>: React 19, Node.js, Django, Vue.js, Vuetify, React, Express.js, SpringBoot, Flask</li>
+      
+      <li><span class="cat-name">Frontend</span>: React 19, UX, Vue.js, Vuetify, SCSS, React, Vite, React Testing Library</li>
+      
+      <li><span class="cat-name">Backend</span>: Node.js, Django, REST APIs, REST API, Kafka, RESTful APIs, API Gateway, Express.js, SpringBoot, Flask, RESTful API Design, Microservices, System Integrations</li>
+      
+      <li><span class="cat-name">DevOps</span>: Dockerized, CI/CD, Docker Compose, Kubernetes, GitHub Actions, Airflow, Jenkins, Artifactory, SonarQube, Terraform, DataDog, Helm, AWS ECS, AWS EKS, AWS Fargate, Docker, CloudFormation, CI/CD GitHub Actions, CI/CD Jenkins</li>
+      
+      <li><span class="cat-name">Methodology</span>: PII, PHI, PCI, HIPAA, GDPR, A/B Testing, PII/PHI/PCI/HIPAA/GDPR Compliance, Agile Scrum, Certified ScrumMaster, Stakeholder Management, Business Requirements, Technical Specifications, User Stories, Use Cases, UML Diagrams, System Migrations, Data Modeling, Dimensional Modeling, Schema Evolution, Change Management, System Integrations</li>
+      
+      <li><span class="cat-name">Other</span>: Fannie Mae, Warner Bros Games, Angel Studios, The Cigna Group, NuSkin, Coca-Cola Corp. Europe, Medical Services Corp., Intrusic Cyber Security</li>
+      
+    </ul>
+  </section>
+  
+
+  
+
+  
+  <section class="section">
+    <h2 class="section-head">Websites</h2>
+    <ul class="websites-list">
+      
+      <li class="website-item">
+        <span class="website-label">Certifications:</span>
+        <a href="https://www.linkedin.com/in/shawnbecker/details/certifications/">https://www.linkedin.com/in/shawnbecker/details/certifications/</a>
+      </li>
+      
+      <li class="website-item">
+        <span class="website-label">Publications:</span>
+        <a href="https://independent.academia.edu/shawnbecker">https://independent.academia.edu/shawnbecker</a>
+      </li>
+      
+      <li class="website-item">
+        <span class="website-label">Patents:</span>
+        <a href="https://patents.justia.com/inventor/shawn-c-becker">https://patents.justia.com/inventor/shawn-c-becker</a>
+      </li>
+      
+      <li class="website-item">
+        <span class="website-label">LinkedIn:</span>
+        <a href="https://www.linkedin.com/in/shawnbecker">https://www.linkedin.com/in/shawnbecker</a>
+      </li>
+      
+      <li class="website-item">
+        <span class="website-label">GitHub:</span>
+        <a href="https://github.com/sbecker11">https://github.com/sbecker11</a>
+      </li>
+      
+      <li class="website-item">
+        <span class="website-label">Portfolio:</span>
+        <a href="https://sbecker11.github.io/flock-of-postcards">https://sbecker11.github.io/flock-of-postcards</a>
+      </li>
+      
+    </ul>
+  </section>
+  
+
+  
+</body>
+</html>

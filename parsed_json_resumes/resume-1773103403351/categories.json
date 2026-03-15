@@ -1,0 +1,15 @@
+{
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "excel",
+      "powerpoint"
+    ]
+  },
+  "database": {
+    "name": "Database",
+    "skillIDs": [
+      "filemaker"
+    ]
+  }
+}

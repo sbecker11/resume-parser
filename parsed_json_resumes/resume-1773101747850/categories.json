@@ -1,0 +1,58 @@
+{
+  "content-writing": {
+    "name": "Content Writing",
+    "skillIDs": [
+      "news-releases",
+      "media-alerts",
+      "biographies",
+      "client-profiles",
+      "fact-sheets",
+      "backgrounders",
+      "psas",
+      "pitch-letters",
+      "briefs",
+      "executive-summaries",
+      "memoranda"
+    ]
+  },
+  "tool": {
+    "name": "Tool",
+    "skillIDs": [
+      "media-map",
+      "ed-cals",
+      "bacon-s",
+      "dow-jones-interactive",
+      "lexis-nexis",
+      "microsoft-word",
+      "excel",
+      "powerpoint",
+      "outlook",
+      "access",
+      "filemakerpro",
+      "indesign",
+      "illustrator",
+      "microsoft-publisher",
+      "photoshop",
+      "wordpress",
+      "hootsuite",
+      "3bl-media"
+    ]
+  },
+  "database": {
+    "name": "Database",
+    "skillIDs": [
+      "access",
+      "filemakerpro"
+    ]
+  },
+  "social-media": {
+    "name": "Social Media",
+    "skillIDs": [
+      "facebook",
+      "twitter",
+      "linkedin",
+      "foursquare",
+      "hootsuite"
+    ]
+  }
+}

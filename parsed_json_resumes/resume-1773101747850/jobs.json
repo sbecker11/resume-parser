@@ -1,0 +1,72 @@
+{
+  "0": {
+    "index": 0,
+    "role": "Public Relations Intern",
+    "employer": "Fleishman-Hillard International Communications",
+    "start": "2018-05-01",
+    "end": "2018-08-31",
+    "z-index": 1,
+    "css name": "darkforest",
+    "css RGB": "#116611",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Developed media materials for a variety of clients, including Angelou Economics, SmartPrice.com, and Motorola Marathon • Strategically brainstormed, planned, executed, and coordinated crucial aspects of an awareness campaign for CATCH • Coordinated various aspects of press events, including the media set‐up of a local press conference for golfer Jack Nicklaus, and completion of follow‐up calls to local print and broadcast media • Assisted in the selection, acquisition, research, and service of new accounts for such clients as: Active Power, Mediaprise, Southern Union Gas, and Woodbine Development • Wrote daily public affairs news summaries for the entire F‐H Texas network, scanned major metropolitan newspapers and public affairs web sites daily for political issues, monitored bills filed; scanned local and national media for client mentions",
+    "skillIDs": []
+  },
+  "1": {
+    "index": 1,
+    "role": "Public Relations Intern",
+    "employer": "Uptown PR",
+    "start": "2017-09-01",
+    "end": "2018-03-31",
+    "z-index": 2,
+    "css name": "darkcyan",
+    "css RGB": "#0069AC",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Conducted research, to include client, competitive analysis, media and demographic, for Ochsner Health Systems, Great Communications, Orange Information Services, James Internet Product Operations • Assembled media materials for technology and consumer clients; aided in the planning of press tours and trade show exhibits for Great Communications • Created and managed media databases for national technology and telephony trade publications; scanned local and state‐wide media and national trade publications for client mentions; professionally arranged and mounted client‐featured clips for presentation",
+    "skillIDs": []
+  },
+  "2": {
+    "index": 2,
+    "role": "Customer Service Representative",
+    "employer": "Verizon Store",
+    "start": "2018-01-01",
+    "end": "CURRENT_DATE",
+    "z-index": 3,
+    "css name": "darkcyan",
+    "css RGB": "#006688",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Customer service representative role at Verizon Store location",
+    "skillIDs": []
+  },
+  "3": {
+    "index": 3,
+    "role": "Server",
+    "employer": "Good Food NOLA",
+    "start": "2018-09-01",
+    "end": "2018-12-31",
+    "z-index": 1,
+    "css name": "blue",
+    "css RGB": "#0000ff",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Server position at Good Food NOLA restaurant",
+    "skillIDs": []
+  },
+  "4": {
+    "index": 4,
+    "role": "Server",
+    "employer": "Lone Star Café",
+    "start": "2013-12-01",
+    "end": "2016-08-31",
+    "z-index": 2,
+    "css name": "mediumblue",
+    "css RGB": "#4400cd",
+    "css color": null,
+    "text color": "#FFFFFF",
+    "Description": "• Server position at Lone Star Café restaurant",
+    "skillIDs": []
+  }
+}

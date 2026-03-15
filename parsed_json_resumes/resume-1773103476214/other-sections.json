@@ -1,0 +1,41 @@
+{
+  "contact": {
+    "name": "Stephen Olsted",
+    "email": "solsted88@stanford.edu",
+    "phone": "415-121-3434",
+    "location": "P.O. Box 88888 • Stanford, CA 94309",
+    "linkedin": "",
+    "website": ""
+  },
+  "title": "",
+  "summary": "",
+  "certifications": [],
+  "websites": [
+    {
+      "label": "FACE AIDS Chapter",
+      "url": "faceaids.wix.com/Stanford"
+    }
+  ],
+  "custom_sections": [
+    {
+      "title": "Health and Leadership Experience",
+      "content": "Co-President, FACE AIDS Chapter, Stanford, CA 09/xxxx – 12/xxxx\n• Marketed and directed multiple HIV education events, taught in high school outreach, facilitated HIV research seminars with faculty, organized 500+-person campus speaker event with Paul Farmer, and led multiple fundraising events.\n• Managed organization webpage faceaids.wix.com/Stanford\n\nPeer Counselor, HIV*PACT and The Bridge, Stanford, CA 01/xxxx – 06/xxxx\n• HIV*PACT: Provided anonymous, confidential HIV testing, counseling, and personalized health education to undergraduate and graduate students\n• The Bridge: Counseled on a range of topics from emergency crisis, academic, relationship, social, to other mental health issues via phone and in-person conversation\n\nFundraiser/Advocate/Spokesperson, National AIDS Awareness Event 06/xxxx – 08/xxxx\n• Biked 4,000 miles in 67 days from San Francisco to Boston to fundraise and educate thousands of people about the complexities of the HIV/AIDS pandemic\n• Planned, led, and spoke at multiple broadcast/media engagements, youth group presentations, and fundraising events\n• Located, coordinated, and delegated housing each night for 18 riders. Personally raised $11,500 of the total $85,000 as a group"
+    },
+    {
+      "title": "Honors",
+      "content": "Levison Fellow 20xx, Stanford leadership and service program through a Jewish lens"
+    },
+    {
+      "title": "Interests",
+      "content": "Technology Education Connecting Cultures (Stanford, 09/20xx – 6/20xx)"
+    }
+  ],
+  "skills": [
+    "R",
+    "Java",
+    "Microsoft Word",
+    "Excel",
+    "PowerPoint",
+    "SPSS"
+  ]
+}
