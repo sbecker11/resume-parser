@@ -9,8 +9,8 @@ Install the package so you get the CLI commands and the `resume_parser` Python A
 **From Git (branch or tag):**
 
 ```bash
-pip install "resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging"
-# or after merge: @main  — or pin a release: @v1.0.0
+pip install "resume-parser @ git+https://github.com/sbecker11/resume-parser.git@main"
+# or pin a release: @v1.0.0
 ```
 
 **From PyPI (once published):**
@@ -23,11 +23,13 @@ pip install resume-parser
 **In a consumer project (e.g. resume-flock):**
 
 - **requirements.txt:**  
-  `resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging`
+  `resume-parser @ git+https://github.com/sbecker11/resume-parser.git@v1.0.0`
 - **pyproject.toml:**  
-  `dependencies = ["resume-parser @ git+https://github.com/sbecker11/resume-parser.git@packaging"]`
+  `dependencies = ["resume-parser @ git+https://github.com/sbecker11/resume-parser.git@v1.0.0"]`
 
-After install, the CLIs are on your PATH: `resume-to-flock`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`. Resume-flock can invoke the renderer with `render-resume-html -i <folder>` (see [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md)).
+After install, **root-level CLIs** are on your PATH: `resume-to-flock`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`. Resume-flock can invoke the renderer with `render-resume-html -i <folder>` (see [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md)).
+
+**Single source of truth for integration:** Schema, validator, and contract specs all live in **[contracts/](contracts/)** (see [contracts/README.md](contracts/README.md)). The package provides the CLIs only; contracts/ holds the documents consumers need.
 
 ---
 

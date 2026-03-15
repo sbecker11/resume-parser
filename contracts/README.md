@@ -1,6 +1,8 @@
 # Contracts
 
-Specifications owned and maintained by resume-parser. External consumers (e.g. resume-flock) implement against these documents.
+**Single source of truth** for schema, validator, and contract specifications. Owned and maintained by resume-parser. External consumers (e.g. resume-flock) implement against these documents.
+
+Root-level CLIs (`resume-to-flock`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`) are provided by the installed package, not stored in this folder.
 
 ## Access via GitHub
 
