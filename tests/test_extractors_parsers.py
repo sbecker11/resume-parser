@@ -365,6 +365,20 @@ class TestParseJobsWithLlm(unittest.TestCase):
         result = parse_jobs_with_llm("x")
         self.assertEqual(result, [])
 
+    @patch("resume_parser.parsers._call_llm")
+    def test_tolerates_trailing_comma_in_llm_json(self, mock_call_llm):
+        mock_call_llm.return_value = '{"jobs": [{"role": "R", "employer": "E", "start": "", "end": "", "description": ""},]}'
+        result = parse_jobs_with_llm("x")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["role"], "R")
+
+    @patch("resume_parser.parsers._call_llm")
+    def test_extracts_json_object_from_wrapped_text(self, mock_call_llm):
+        mock_call_llm.return_value = 'Here is the JSON:\n{"jobs": [{"role": "R", "employer": "E", "start": "", "end": "", "description": ""}]}\nHope that helps.'
+        result = parse_jobs_with_llm("x")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["role"], "R")
+
 
 class TestParseResumeSections(unittest.TestCase):
     """Test parsers.parse_resume_sections with mocked _call_llm."""

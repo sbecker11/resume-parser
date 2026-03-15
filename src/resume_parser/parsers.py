@@ -116,6 +116,53 @@ def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> s
     raise RuntimeError("Unsupported LLM provider")
 
 
+def _parse_llm_json(text: str) -> dict[str, Any]:
+    """
+    Parse JSON from LLM response. Strips markdown code fences, tolerates trailing commas,
+    and tries to extract a single JSON object if the response is wrapped in extra text.
+    """
+    text = text.strip()
+    # Strip markdown code blocks (```json ... ``` or ``` ... ```)
+    if "```" in text:
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```\s*$", "", text)
+        text = text.strip()
+
+    def try_load(s: str) -> dict[str, Any]:
+        return json.loads(s)
+
+    try:
+        return try_load(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try removing trailing commas before ] or } (common LLM mistake)
+    fixed = re.sub(r",\s*([}\]])", r"\1", text)
+    try:
+        return try_load(fixed)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract the first complete {...} object (in case of leading/trailing text)
+    start = text.find("{")
+    if start >= 0:
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return try_load(text[start : i + 1])
+                    except json.JSONDecodeError:
+                        break
+    raise ValueError(
+        "LLM response is not valid JSON (markdown or trailing commas may be present). "
+        f"First 300 chars: {repr(text[:300])}"
+    )
+
+
 def parse_jobs_with_llm(raw_text: str) -> list[dict[str, Any]]:
     """
     Use LLM (LLM_PROVIDER=anthropic, ANTHROPIC_API_KEY) to extract structured jobs from resume text.
@@ -150,12 +197,7 @@ Rules:
 
     user_prompt = f"Extract all work experience and education from this resume:\n\n{raw_text}"
     text = _call_llm(system_prompt, user_prompt)
-
-    # Strip markdown code blocks if present
-    if "```" in text:
-        text = re.sub(r"```(?:json)?\s*", "", text)
-        text = re.sub(r"```\s*$", "", text)
-    data = json.loads(text.strip())
+    data = _parse_llm_json(text)
     return data.get("jobs", [])
 
 
@@ -195,11 +237,7 @@ Rules:
 
     user_prompt = f"Extract contact, summary, certifications, skills, and other sections from this resume (exclude work experience and education):\n\n{raw_text}"
     text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
-
-    if "```" in text:
-        text = re.sub(r"```(?:json)?\s*", "", text)
-        text = re.sub(r"```\s*$", "", text)
-    data = json.loads(text.strip())
+    data = _parse_llm_json(text)
 
     # Normalize to expected keys
     return {
@@ -264,10 +302,7 @@ Skills: {json.dumps(skills_needing_url)}
 
     try:
         text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
-        if "```" in text:
-            text = re.sub(r"```(?:json)?\s*", "", text)
-            text = re.sub(r"```\s*$", "", text)
-        data = json.loads(text.strip())
+        data = _parse_llm_json(text)
         for item in data.get("suggestions", []):
             name = item.get("name")
             url = (item.get("url") or "").strip()
@@ -307,10 +342,7 @@ Skills: {json.dumps(names)}
 
     try:
         text = _call_llm(system_prompt, user_prompt, max_tokens=4096)
-        if "```" in text:
-            text = re.sub(r"```(?:json)?\s*", "", text)
-            text = re.sub(r"```\s*$", "", text)
-        data = json.loads(text.strip())
+        data = _parse_llm_json(text)
         cat_map = data.get("categories") or data
         if not isinstance(cat_map, dict):
             return skills
