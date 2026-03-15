@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-resume-to-flock: Parse resume (DOCX/PDF) into flock-of-postcards jobs.mjs, skills.mjs, other-sections.mjs, resume.html, and resume_template.html.
+resume-to-flock: Parse resume (DOCX/PDF) into flock-of-postcards jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs.
 
 Usage:
-  python resume_to_flock.py <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich]
+  python resume_to_flock.py <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
 
-  --output-dir   Where to write jobs.mjs, skills.mjs, other-sections.mjs, resume.html, resume_template.html
+  --output-dir   Where to write .mjs files (and optional resume copy)
   --no-llm       Skip LLM calls; use extraction only (for testing)
   --no-enrich    Skip LLM skill URL enrichment
+  --no-merge     Skip skill merge step (non-interactive)
   --provider     Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY
+  --render       After writing .mjs, run render_resume_html to generate resume.html
 """
 
 import argparse
@@ -27,6 +29,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from extractors import extract_text
+from skill_merge import run_merge_interactive
 from parsers import (
     parse_jobs_with_llm,
     parse_resume_sections,
@@ -58,135 +61,93 @@ def _default_output_dir() -> Path:
     return Path.cwd()
 
 
-def _write_jobs_mjs(jobs: dict[str, dict], out_dir: Path) -> Path:
-    """Write jobs dict keyed by jobID: { \"0\": job0, \"1\": job1, ... }."""
+def _write_mjs_export(path: Path, var_name: str, data: dict | list, out_dir: Path) -> Path:
+    """Write export const varName = ...; (resume-flock format)."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "jobs.mjs"
     with open(path, "w", encoding="utf-8") as f:
-        f.write("const jobs = ")
-        f.write(json.dumps(jobs, ensure_ascii=False))
+        f.write(f"export const {var_name} = ")
+        f.write(json.dumps(data, ensure_ascii=False))
         f.write(";")
     return path
+
+
+def _write_jobs_mjs(jobs: dict[str, dict], out_dir: Path) -> Path:
+    """Write jobs dict keyed by jobID (resume-flock format)."""
+    return _write_mjs_export(out_dir / "jobs.mjs", "jobs", jobs, out_dir)
 
 
 def _write_skills_mjs(skills_by_id: dict[str, dict], out_dir: Path) -> Path:
-    """Write skills dict keyed by skillID: { \"skillID\": { \"name\": \"Display Name\", \"url\", \"img\", \"categoryIDs\", \"jobIDs\" }, ... }."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "skills.mjs"
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("const skills = ")
-        f.write(json.dumps(skills_by_id, ensure_ascii=False))
-        f.write(";")
-    return path
+    """Write skills dict keyed by skillID (resume-flock format)."""
+    return _write_mjs_export(out_dir / "skills.mjs", "skills", skills_by_id, out_dir)
 
 
 def _write_categories_mjs(categories: dict[str, dict], out_dir: Path) -> Path:
-    """Write categories dict (categoryID -> { name, skillIDs }) to categories.mjs."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "categories.mjs"
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("const categories = ")
-        f.write(json.dumps(categories, ensure_ascii=False))
-        f.write(";")
-    return path
+    """Write categories dict (resume-flock format)."""
+    return _write_mjs_export(out_dir / "categories.mjs", "categories", categories, out_dir)
 
 
-def _write_other_sections_mjs(meta: dict, out_dir: Path) -> Path:
-    """Write contact, summary, certifications, skills, other_sections to other-sections.mjs."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "other-sections.mjs"
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("const otherSections = ")
-        f.write(json.dumps(meta, ensure_ascii=False))
-        f.write(";")
-    return path
-
-
-def _template_dir() -> Path:
-    return Path(__file__).resolve().parent / "templates"
-
-
-def _linkify(text: str) -> str:
-    """Wrap valid http(s) URLs in text with <a href="...">...</a>. Returns markup-safe string."""
-    import re
-    from markupsafe import Markup, escape
-    if not text:
-        return ""
-    # Match http:// or https:// URLs (no spaces or angle brackets)
-    pattern = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
-    parts = pattern.split(text)
-    matches = pattern.findall(text)
-    result = escape(parts[0])
-    for i, url in enumerate(matches):
-        safe_url = escape(url)
-        result += Markup('<a href="') + safe_url + Markup('">') + safe_url + Markup("</a>")
-        result += escape(parts[i + 1])
-    return Markup(result)
-
-
-def _render_resume_html(
-    flock_jobs: list[dict],
-    skills: dict,
-    resume_meta: dict,
-    categories: dict[str, dict[str, str]],
-    out_dir: Path,
-) -> tuple[Path, Path]:
-    """Render resume from template; write resume.html and copy template to output. Returns (resume_path, template_copy_path)."""
-    from jinja2 import Environment, FileSystemLoader
-    out_dir.mkdir(parents=True, exist_ok=True)
-    templates_path = _template_dir()
-    env = Environment(loader=FileSystemLoader(str(templates_path)))
-    env.filters["linkify"] = lambda s: _linkify(s) if s else ""
-    template = env.get_template("resume.html")
+def _build_other_sections_for_flock(resume_meta: dict) -> dict:
+    """Transform parser meta to resume-flock otherSections schema."""
     contact = resume_meta.get("contact") or {}
-    title = resume_meta.get("title") or ""
-    summary = resume_meta.get("summary") or ""
-    certifications = resume_meta.get("certifications") or []
-    other_sections = resume_meta.get("other_sections") or []
+    title = (resume_meta.get("title") or "").strip()
+    summary = (resume_meta.get("summary") or "").strip()
+    # Certifications: {name, issuer, date} -> {name, url?, description?}
+    certs = []
+    for c in resume_meta.get("certifications") or []:
+        name = (c.get("name") or "").strip()
+        issuer = (c.get("issuer") or "").strip()
+        date = (c.get("date") or "").strip()
+        desc = " ".join([x for x in [issuer, date] if x]).strip()
+        certs.append({"name": name, "url": "", "description": desc})
+    # Websites: already from parse_resume_sections
+    websites = resume_meta.get("websites") or []
+    # Custom sections: other_sections -> {title, content}
+    custom_sections = []
+    for s in resume_meta.get("other_sections") or []:
+        t = (s.get("title") or "").strip()
+        content = (s.get("content") or "").strip()
+        if t:
+            custom_sections.append({"title": t, "content": content})
+    return {
+        "contact": contact,
+        "title": title,
+        "summary": summary,
+        "certifications": certs,
+        "websites": websites,
+        "custom_sections": custom_sections,
+        "skills": resume_meta.get("skills") or [],
+    }
 
-    def _description_bullets(desc: str) -> list[str]:
-        if not desc or not desc.strip():
-            return []
-        text = desc.strip()
-        if "•" in text:
-            return [p.strip() for p in text.split("•") if p.strip()]
-        parts = [p.strip() for p in text.split(". ") if p.strip()]
-        return [p if p.endswith(".") else p + "." for p in parts]
 
-    jobs_with_bullets = [
-        {**job, "description_bullets": _description_bullets(job.get("Description") or "")}
-        for job in flock_jobs
-    ]
+def _write_other_sections_mjs(resume_meta: dict, out_dir: Path) -> Path:
+    """Write otherSections in resume-flock schema."""
+    other = _build_other_sections_for_flock(resume_meta)
+    return _write_mjs_export(out_dir / "other-sections.mjs", "otherSections", other, out_dir)
 
-    # Group skills by category for template: list of { "name": category name, "skills": [skill names] }
-    skills_by_category: list[dict] = []
-    for cid, cat in categories.items():
-        names = [name for name, data in skills.items() if cid in data.get("categoryIDs", [])]
-        if names:
-            skills_by_category.append({"name": cat["name"], "skills": names})
-    skills_without_category = [name for name, data in skills.items() if not data.get("categoryIDs")]
-    if skills_without_category:
-        skills_by_category.append({"name": "Other", "skills": skills_without_category})
-    html = template.render(
-        contact=contact,
-        title=title,
-        summary=summary,
-        jobs=jobs_with_bullets,
-        skills=skills,
-        categories=categories,
-        skills_by_category=skills_by_category,
-        certifications=certifications,
-        other_sections=other_sections,
-    )
-    resume_path = out_dir / "resume.html"
-    with open(resume_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    template_src = templates_path / "resume.html"
-    template_dest = out_dir / "resume_template.html"
-    if template_src.exists():
-        import shutil
-        shutil.copy2(template_src, template_dest)
-    return resume_path, template_dest
+
+def _write_meta_json(
+    out_dir: Path,
+    resume_id: str,
+    display_name: str,
+    file_name: str,
+    job_count: int,
+    skill_count: int,
+) -> Path:
+    """Write meta.json for resume-flock list UI."""
+    from datetime import datetime, timezone
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meta = {
+        "id": resume_id,
+        "displayName": display_name,
+        "createdAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        "fileName": file_name,
+        "jobCount": job_count,
+        "skillCount": skill_count,
+    }
+    path = out_dir / "meta.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+    return path
 
 
 def main() -> int:
@@ -199,6 +160,12 @@ def main() -> int:
         help="Output directory (default: flock-of-postcards/static_content or cwd)",
     )
     parser.add_argument(
+        "--id",
+        type=str,
+        default=None,
+        help="Resume id for meta.json (default: output dir basename)",
+    )
+    parser.add_argument(
         "--no-llm",
         action="store_true",
         help="Skip LLM; extract text only (no job parsing)",
@@ -209,10 +176,20 @@ def main() -> int:
         help="Skip LLM skill URL enrichment",
     )
     parser.add_argument(
+        "--no-merge",
+        action="store_true",
+        help="Skip skill merge step (for non-interactive / CI use)",
+    )
+    parser.add_argument(
         "--provider",
         choices=["anthropic"],
         default=None,
         help="Force LLM_PROVIDER (anthropic); requires ANTHROPIC_API_KEY",
+    )
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="After writing .mjs, run render_resume_html.py to generate resume.html",
     )
     args = parser.parse_args()
 
@@ -310,6 +287,10 @@ def main() -> int:
     categories = build_categories_dict(skills)
     assign_skill_ids(skills)
 
+    if not args.no_merge and len(skills) >= 2:
+        print("Suggesting skill merges...")
+        run_merge_interactive(skills, flock_jobs, categories)
+
     # Add skillIDs list to each category (skills that belong to that category)
     for cid, cat in categories.items():
         cat["skillIDs"] = [
@@ -345,19 +326,28 @@ def main() -> int:
     if args.resume.resolve() != resume_copy_path.resolve():
         shutil.copy2(args.resume, resume_copy_path)
 
-    # Write output: jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs, resume.html, resume_template.html
+    # Write output: jobs.mjs, skills.mjs, categories.mjs, other-sections.mjs, meta.json
     jobs_path = _write_jobs_mjs(jobs_by_id, out_dir)
     skills_path = _write_skills_mjs(skills_by_id, out_dir)
     categories_path = _write_categories_mjs(categories, out_dir)
     other_path = _write_other_sections_mjs(resume_meta, out_dir)
-    resume_path, template_path = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
+    resume_id = args.id if args.id else out_dir.name
+    display_name = (resume_meta.get("contact") or {}).get("name") or args.resume.stem or "Resume"
+    meta_path = _write_meta_json(
+        out_dir, resume_id, display_name, args.resume.name,
+        len(jobs_by_id), len(skills_by_id),
+    )
     print(f"Copied {resume_copy_path}")
     print(f"Wrote {jobs_path}")
     print(f"Wrote {skills_path}")
     print(f"Wrote {categories_path}")
     print(f"Wrote {other_path}")
-    print(f"Wrote {resume_path}")
-    print(f"Wrote {template_path}")
+    print(f"Wrote {meta_path}")
+    if args.render:
+        from render_resume_html import render_resume_html
+        resume_path, template_path = render_resume_html(out_dir)
+        print(f"Wrote {resume_path}")
+        print(f"Wrote {template_path}")
     return 0
 
 

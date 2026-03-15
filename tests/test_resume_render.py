@@ -1,32 +1,39 @@
-"""Tests for resume HTML render and template copy."""
+"""Tests for render_resume_html.py (HTML generation from .mjs files)."""
+import json
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
 
-# Import from resume_to_flock (add parent to path if needed)
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from resume_to_flock import _render_resume_html, _template_dir
+
+from render_resume_html import render_resume_html, _load_mjs
 
 
 class TestRenderResumeHtml(unittest.TestCase):
-    def test_renders_html_and_copies_template(self):
-        flock_jobs = [
-            {"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "Description": "Did stuff."},
-        ]
-        skills = {"Python": {"url": "https://python.org", "img": "", "categoryIDs": ["programming-language"], "jobIDs": [0]}}
-        categories = {"programming-language": {"name": "Programming Language"}}
-        resume_meta = {
-            "contact": {"name": "Jane Doe", "email": "j@example.com", "phone": "", "location": "", "linkedin": "", "website": ""},
-            "title": "Data Engineer",
-            "summary": "Summary here.",
-            "certifications": [],
-            "skills": [],
-            "other_sections": [],
-        }
+    """Test render_resume_html reads .mjs and writes resume.html."""
+
+    def test_renders_html_from_mjs_files(self):
         with tempfile.TemporaryDirectory() as d:
             out_dir = Path(d)
-            resume_path, template_path = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
+            # Write minimal .mjs files
+            jobs = {"0": {"index": 0, "role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "Description": "Did stuff.", "skillIDs": []}}
+            skills = {"python": {"name": "Python", "url": "https://python.org", "img": "", "categoryIDs": ["programming-language"], "jobIDs": [0]}}
+            categories = {"programming-language": {"name": "Programming Language", "skillIDs": ["python"]}}
+            other = {
+                "contact": {"name": "Jane Doe", "email": "j@example.com", "phone": "", "location": "", "linkedin": "", "website": ""},
+                "title": "Data Engineer",
+                "summary": "Summary here.",
+                "certifications": [],
+                "skills": ["Python"],
+                "other_sections": [],
+            }
+            (out_dir / "jobs.mjs").write_text("const jobs = " + json.dumps(jobs) + ";", encoding="utf-8")
+            (out_dir / "skills.mjs").write_text("const skills = " + json.dumps(skills) + ";", encoding="utf-8")
+            (out_dir / "categories.mjs").write_text("const categories = " + json.dumps(categories) + ";", encoding="utf-8")
+            (out_dir / "other-sections.mjs").write_text("const otherSections = " + json.dumps(other) + ";", encoding="utf-8")
+
+            resume_path, template_path = render_resume_html(out_dir)
             self.assertTrue(resume_path.exists())
             self.assertTrue(template_path.exists())
             html = resume_path.read_text(encoding="utf-8")
@@ -35,3 +42,100 @@ class TestRenderResumeHtml(unittest.TestCase):
             self.assertIn("Acme", html)
             self.assertIn("Python", html)
             self.assertIn("Programming Language", html)
+
+    def test_load_mjs_parses_json(self):
+        with tempfile.NamedTemporaryFile(suffix=".mjs", delete=False) as f:
+            f.write(b'const jobs = {"0": {"role": "Dev"}};')
+            f.flush()
+        try:
+            data = _load_mjs(Path(f.name), "jobs")
+            self.assertEqual(data, {"0": {"role": "Dev"}})
+        finally:
+            Path(f.name).unlink(missing_ok=True)
+
+    def test_load_mjs_accepts_export_const(self):
+        with tempfile.NamedTemporaryFile(suffix=".mjs", delete=False) as f:
+            f.write(b'export const jobs = {"0": {"role": "Dev"}};')
+            f.flush()
+        try:
+            data = _load_mjs(Path(f.name), "jobs")
+            self.assertEqual(data, {"0": {"role": "Dev"}})
+        finally:
+            Path(f.name).unlink(missing_ok=True)
+
+    def test_missing_mjs_raises(self):
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            with self.assertRaises(FileNotFoundError):
+                render_resume_html(out_dir)
+
+    def _write_mjs(self, out_dir: Path, jobs: dict, skills: dict, categories: dict, other: dict):
+        (out_dir / "jobs.mjs").write_text("const jobs = " + json.dumps(jobs) + ";", encoding="utf-8")
+        (out_dir / "skills.mjs").write_text("const skills = " + json.dumps(skills) + ";", encoding="utf-8")
+        (out_dir / "categories.mjs").write_text("const categories = " + json.dumps(categories) + ";", encoding="utf-8")
+        (out_dir / "other-sections.mjs").write_text("const otherSections = " + json.dumps(other) + ";", encoding="utf-8")
+
+    def test_description_bullets_from_mjs(self):
+        jobs = {"0": {"index": 0, "role": "R", "employer": "E", "start": "", "end": "", "Description": "First sentence. Second sentence. Third.", "skillIDs": []}}
+        skills = {}
+        categories = {}
+        other = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_mjs(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir)
+            html = resume_path.read_text()
+            self.assertIn("First sentence", html)
+            self.assertIn("Second sentence", html)
+
+    def test_skills_without_category_in_other(self):
+        jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "", "skillIDs": []}}
+        skills = {
+            "python": {"name": "Python", "url": "", "img": "", "categoryIDs": ["prog"], "jobIDs": []},
+            "unknown": {"name": "UnknownSkill", "url": "", "img": "", "categoryIDs": [], "jobIDs": []},
+        }
+        categories = {"prog": {"name": "Programming", "skillIDs": ["python"]}}
+        other = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_mjs(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir)
+            html = resume_path.read_text()
+            self.assertIn("Other", html)
+            self.assertIn("UnknownSkill", html)
+
+    def test_linkify_in_summary(self):
+        jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "", "skillIDs": []}}
+        skills = {}
+        categories = {}
+        other = {"contact": {}, "title": "", "summary": "See https://example.com for more.", "certifications": [], "skills": [], "other_sections": []}
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_mjs(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir)
+            html = resume_path.read_text()
+            self.assertIn('href="https://example.com"', html)
+
+    def test_render_with_resume_flock_format(self):
+        """render_resume_html handles PARSED-RESUME-FORMAT: custom_sections, websites, certifications {name,url,description}."""
+        jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "", "skillIDs": []}}
+        skills = {}
+        categories = {}
+        other = {
+            "contact": {"name": "Jane Doe"},
+            "title": "Engineer",
+            "summary": "",
+            "certifications": [
+                {"name": "AWS CPA", "url": "https://aws.amazon.com/certification/", "description": "AWS 2023"},
+            ],
+            "websites": [{"label": "LinkedIn", "url": "https://linkedin.com/in/jane"}],
+            "custom_sections": [{"title": "Awards", "content": "Best dev 2024"}],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            self._write_mjs(out_dir, jobs, skills, categories, other)
+            resume_path, _ = render_resume_html(out_dir)
+            html = resume_path.read_text()
+            self.assertIn("Jane Doe", html)
+            self.assertIn("AWS CPA", html)
+            self.assertIn("Best dev 2024", html)

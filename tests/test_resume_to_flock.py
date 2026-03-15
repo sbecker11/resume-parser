@@ -1,4 +1,6 @@
 """Tests for resume_to_flock.py to achieve >= 80% coverage."""
+import json
+import re
 import sys
 import tempfile
 import unittest
@@ -13,9 +15,7 @@ from resume_to_flock import (
     _write_skills_mjs,
     _write_categories_mjs,
     _write_other_sections_mjs,
-    _template_dir,
-    _linkify,
-    _render_resume_html,
+    _write_meta_json,
     main,
 )
 
@@ -43,7 +43,7 @@ class TestWriters(unittest.TestCase):
             jobs = {"0": {"index": 0, "role": "Engineer", "skillIDs": []}}
             path = _write_jobs_mjs(jobs, out)
             self.assertTrue(path.exists())
-            self.assertIn("const jobs = ", path.read_text())
+            self.assertIn("export const jobs = ", path.read_text())
             self.assertIn("Engineer", path.read_text())
 
     def test_write_skills_mjs(self):
@@ -54,7 +54,7 @@ class TestWriters(unittest.TestCase):
             path = _write_skills_mjs(skills_by_id, out)
             self.assertTrue(path.exists())
             text = path.read_text()
-            self.assertIn("const skills = ", text)
+            self.assertIn("export const skills = ", text)
             self.assertIn("python", text)
             self.assertIn("Python", text)
 
@@ -64,7 +64,7 @@ class TestWriters(unittest.TestCase):
             categories = {"lang": {"name": "Language", "skillIDs": ["python"]}}
             path = _write_categories_mjs(categories, out)
             self.assertTrue(path.exists())
-            self.assertIn("const categories = ", path.read_text())
+            self.assertIn("export const categories = ", path.read_text())
 
     def test_write_other_sections_mjs(self):
         with tempfile.TemporaryDirectory() as d:
@@ -72,96 +72,57 @@ class TestWriters(unittest.TestCase):
             meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
             path = _write_other_sections_mjs(meta, out)
             self.assertTrue(path.exists())
-            self.assertIn("const otherSections = ", path.read_text())
+            self.assertIn("export const otherSections = ", path.read_text())
 
-
-class TestTemplateDir(unittest.TestCase):
-    def test_returns_templates_subdir(self):
-        t = _template_dir()
-        self.assertEqual(t.name, "templates")
-        self.assertTrue(t.is_absolute() or "templates" in str(t))
-
-
-class TestLinkify(unittest.TestCase):
-    def test_empty_string(self):
-        self.assertEqual(_linkify(""), "")
-
-    def test_none_equivalent(self):
-        self.assertEqual(_linkify(None or ""), "")
-
-    def test_no_url_returns_escaped(self):
-        result = _linkify("Hello world")
-        self.assertIn("Hello world", result)
-        self.assertNotIn("<a ", str(result))
-
-    def test_wraps_single_url(self):
-        result = _linkify("See https://example.com for more.")
-        self.assertIn('href="https://example.com"', str(result))
-        self.assertIn(">https://example.com<", str(result))
-
-    def test_wraps_multiple_urls(self):
-        result = _linkify("A https://a.com and https://b.com end")
-        self.assertIn("https://a.com", str(result))
-        self.assertIn("https://b.com", str(result))
-        self.assertIn("<a ", str(result))
-
-
-class TestRenderResumeHtmlBranches(unittest.TestCase):
-    """Cover description bullets (• and . ), skills_without_category, template copy."""
-
-    def test_description_bullets_with_dot_separator(self):
-        flock_jobs = [
-            {"role": "R", "employer": "E", "Description": "First sentence. Second sentence. Third."},
-        ]
-        skills = {}
-        categories = {}
-        resume_meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
+    def test_other_sections_resume_flock_schema(self):
+        """other-sections.mjs output matches PARSED-RESUME-FORMAT: certifications {name,url,description}, websites, custom_sections."""
         with tempfile.TemporaryDirectory() as d:
-            out_dir = Path(d)
-            resume_path, _ = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
-            html = resume_path.read_text()
-            self.assertIn("First sentence", html)
-            self.assertIn("Second sentence", html)
+            out = Path(d)
+            meta = {
+                "contact": {"name": "Jane", "email": "j@x.com"},
+                "title": "Engineer",
+                "summary": "Summary.",
+                "certifications": [
+                    {"name": "AWS CPA", "issuer": "AWS", "date": "2023"},
+                ],
+                "skills": ["Python"],
+                "websites": [{"label": "LinkedIn", "url": "https://linkedin.com/in/jane"}],
+                "other_sections": [{"title": "Awards", "content": "Best dev 2024"}],
+            }
+            path = _write_other_sections_mjs(meta, out)
+            text = path.read_text()
+            m = re.search(r"export const otherSections = (.+);\s*$", text, re.DOTALL)
+            self.assertIsNotNone(m)
+            data = json.loads(m.group(1))
+            self.assertEqual(data["contact"]["name"], "Jane")
+            self.assertEqual(data["title"], "Engineer")
+            self.assertEqual(data["summary"], "Summary.")
+            self.assertEqual(len(data["certifications"]), 1)
+            self.assertEqual(data["certifications"][0]["name"], "AWS CPA")
+            self.assertIn("url", data["certifications"][0])
+            self.assertIn("description", data["certifications"][0])
+            self.assertEqual(data["certifications"][0]["description"], "AWS 2023")
+            self.assertEqual(data["websites"], [{"label": "LinkedIn", "url": "https://linkedin.com/in/jane"}])
+            self.assertEqual(data["custom_sections"], [{"title": "Awards", "content": "Best dev 2024"}])
+            self.assertEqual(data["skills"], ["Python"])
 
-    def test_description_bullets_with_bullet_char(self):
-        flock_jobs = [
-            {"role": "R", "employer": "E", "Description": "Item one • Item two • Item three"},
-        ]
-        skills = {}
-        categories = {}
-        resume_meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
+    def test_meta_json_schema(self):
+        """meta.json matches PARSED-RESUME-FORMAT: id, displayName, createdAt, fileName, jobCount, skillCount."""
         with tempfile.TemporaryDirectory() as d:
-            out_dir = Path(d)
-            resume_path, _ = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
-            html = resume_path.read_text()
-            self.assertIn("Item one", html)
-            self.assertIn("Item two", html)
-
-    def test_skills_without_category_appear_in_other(self):
-        flock_jobs = [{"role": "R", "employer": "E", "Description": ""}]
-        skills = {
-            "Python": {"url": "", "img": "", "categoryIDs": ["prog"], "jobIDs": []},
-            "UnknownSkill": {"url": "", "img": "", "categoryIDs": [], "jobIDs": []},
-        }
-        categories = {"prog": {"name": "Programming", "skillIDs": ["python"]}}
-        resume_meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
-        with tempfile.TemporaryDirectory() as d:
-            out_dir = Path(d)
-            resume_path, _ = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
-            html = resume_path.read_text()
-            self.assertIn("Other", html)
-            self.assertIn("UnknownSkill", html)
-
-    def test_template_copy_when_source_exists(self):
-        flock_jobs = [{"role": "R", "employer": "E", "Description": ""}]
-        skills = {}
-        categories = {}
-        resume_meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
-        with tempfile.TemporaryDirectory() as d:
-            out_dir = Path(d)
-            _, template_path = _render_resume_html(flock_jobs, skills, resume_meta, categories, out_dir)
-            self.assertTrue(template_path.exists())
-            self.assertEqual(template_path.name, "resume_template.html")
+            out = Path(d)
+            path = _write_meta_json(
+                out, resume_id="parsed-resume-1", display_name="Jane Doe 2025",
+                file_name="resume.docx", job_count=11, skill_count=85,
+            )
+            self.assertTrue(path.exists())
+            data = json.loads(path.read_text())
+            self.assertEqual(data["id"], "parsed-resume-1")
+            self.assertEqual(data["displayName"], "Jane Doe 2025")
+            self.assertIn("createdAt", data)
+            self.assertRegex(data["createdAt"], r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+            self.assertEqual(data["fileName"], "resume.docx")
+            self.assertEqual(data["jobCount"], 11)
+            self.assertEqual(data["skillCount"], 85)
 
 
 class TestMain(unittest.TestCase):
@@ -211,7 +172,7 @@ class TestMain(unittest.TestCase):
                             with patch("resume_to_flock.parse_resume_sections", return_value=resume_meta):
                                 with patch("resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
                                     with patch("resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
-                                        with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir)]):
+                                        with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
                                             with patch("builtins.print"):
                                                 result = main()
                 self.assertEqual(result, 0)
@@ -228,6 +189,39 @@ class TestMain(unittest.TestCase):
                 self.assertTrue((out_dir / "other-sections.mjs").exists())
                 self.assertTrue((out_dir / "resume.html").exists())
                 self.assertTrue((out_dir / "resume_template.html").exists())
+                self.assertTrue((out_dir / "meta.json").exists())
+        finally:
+            Path(resume_path).unlink(missing_ok=True)
+
+    def test_full_pipeline_with_no_merge_skips_interactive(self):
+        """With --no-merge and 2+ skills, run_merge_interactive is not called."""
+        with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as f:
+            f.write(b"dummy")
+            resume_path = f.name
+        try:
+            with tempfile.TemporaryDirectory() as out_d:
+                out_dir = Path(out_d)
+                jobs_data = [
+                    {"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "", "description": "Python and Java."},
+                ]
+                resume_meta = {"contact": {}, "title": "", "summary": "", "certifications": [], "skills": [], "other_sections": []}
+                skills_with_cats = {
+                    "Python": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
+                    "Java": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
+                }
+                with patch("resume_to_flock.extract_text", return_value="Resume text"):
+                    with patch("resume_to_flock.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_to_flock.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
+                                        merge_mock = MagicMock()
+                                        with patch("resume_to_flock.run_merge_interactive", merge_mock):
+                                            with patch("sys.argv", ["resume_to_flock.py", resume_path, "-o", str(out_dir), "--no-merge"]):
+                                                with patch("builtins.print"):
+                                                    result = main()
+                self.assertEqual(result, 0)
+                merge_mock.assert_not_called()
         finally:
             Path(resume_path).unlink(missing_ok=True)
 

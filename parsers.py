@@ -179,6 +179,7 @@ Output valid JSON only, no markdown or explanation. Use this exact schema:
   "summary": "string (professional summary / objective; empty if absent)",
   "certifications": [ { "name": "string", "issuer": "string or empty", "date": "string or empty" } ],
   "skills": [ "string" ],
+  "websites": [ { "label": "string (e.g. Certifications, LinkedIn)", "url": "string (https://...)" } ],
   "other_sections": [ { "title": "string (section heading)", "content": "string" } ]
 }
 Rules:
@@ -187,6 +188,7 @@ Rules:
 - summary: the main summary/objective paragraph.
 - certifications: list each certification with name; add issuer and date if present.
 - skills: the explicit skills list (e.g. "Skills" section); do not duplicate technologies from job descriptions.
+- websites: labeled links found in the resume (e.g. "Certifications: https://...", "LinkedIn: https://..."). One entry per label:URL line.
 - other_sections: any other sections (e.g. Publications, Patents, Volunteer, Awards, Languages). Use title for the section heading and content for the body text.
 - If a section is absent, use empty string or empty array as appropriate.
 """
@@ -206,6 +208,7 @@ Rules:
         "summary": data.get("summary") or "",
         "certifications": data.get("certifications") or [],
         "skills": data.get("skills") or [],
+        "websites": data.get("websites") or [],
         "other_sections": data.get("other_sections") or [],
     }
 
