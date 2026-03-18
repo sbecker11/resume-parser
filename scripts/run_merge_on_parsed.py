@@ -19,6 +19,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -123,13 +124,40 @@ def run_merge_in_dir(dir_path: Path, render: bool, accept_all: bool = False) -> 
     else:
         replacements = run_merge_interactive(skills_by_name, jobs_list, categories)
 
-    # Update job descriptions: replace merged source names with target name
-    for source_names, target_name in (replacements or []):
-        for job in jobs_list:
-            desc = job.get("Description") or ""
+    # Additional pass: replace all merged terms in job descriptions.
+    # Convention: skills in job descriptions are wrapped in [SkillName] brackets.
+    # We:
+    #  1) replace already-bracketed occurrences: [source] -> [target]
+    #  2) bracketify unbracketed occurrences: source (not inside [...]) -> [target]
+    #
+    # Compute transitive final mapping so chained merges are correct.
+    if replacements:
+        immediate_map: dict[str, str] = {}
+        for source_names, target_name in replacements:
             for sn in source_names:
-                desc = desc.replace(sn, target_name)
-            job["Description"] = desc
+                immediate_map[sn] = target_name
+
+        def _resolve_final(term: str) -> str:
+            seen: set[str] = set()
+            cur = term
+            while cur in immediate_map and cur not in seen:
+                seen.add(cur)
+                cur = immediate_map[cur]
+            return cur
+
+        final_map = {src: _resolve_final(src) for src in immediate_map.keys()}
+        sources_sorted = sorted(final_map.keys(), key=len, reverse=True)
+
+        def _replace_in_desc(desc: str) -> str:
+            out = desc or ""
+            for src in sources_sorted:
+                tgt = final_map[src]
+                out = re.sub(r"\[" + re.escape(src) + r"\]", f"[{tgt}]", out)
+                out = re.sub(r"(?<!\[)" + re.escape(src) + r"(?!\])", f"[{tgt}]", out)
+            return out
+
+        for job in jobs_list:
+            job["Description"] = _replace_in_desc(job.get("Description") or "")
 
     # Recompute category skillIDs and job skillIDs from merged skills
     for cat_id, cat in categories.items():

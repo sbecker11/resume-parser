@@ -138,6 +138,47 @@ class TestRunMergeInDir(unittest.TestCase):
             self.assertTrue(result)
             mock_merge.assert_not_called()
 
+    def test_replaces_merged_terms_in_job_descriptions(self):
+        """
+        After a merge, job descriptions must swap source terms with the merged term
+        using the bracket convention: source -> [final merged term].
+        """
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d)
+            jobs = {
+                "0": {
+                    "index": 0,
+                    "role": "R",
+                    "employer": "E",
+                    "start": "",
+                    "end": "",
+                    "Description": "Used [K-means] and also K-means in the workflow.",
+                    "skillIDs": ["k-means", "other"],
+                }
+            }
+            skills = {
+                "k-means": {"name": "K-means", "url": "", "img": "", "categoryIDs": [], "jobIDs": [0]},
+                "other": {"name": "Other", "url": "", "img": "", "categoryIDs": [], "jobIDs": [0]},
+            }
+            categories = {}
+
+            (folder / "jobs.json").write_text(json.dumps(jobs), encoding="utf-8")
+            (folder / "skills.json").write_text(json.dumps(skills), encoding="utf-8")
+            (folder / "categories.json").write_text(json.dumps(categories), encoding="utf-8")
+
+            with patch(
+                "resume_parser.run_merge_on_parsed.run_merge_interactive",
+                return_value=[(["K-means"], "K-means clustering")],
+            ):
+                result = run_merge_in_dir(folder, render=False, accept_all=False)
+
+            self.assertTrue(result)
+            updated = json.loads((folder / "jobs.json").read_text(encoding="utf-8"))
+            desc = updated["0"]["Description"]
+            self.assertIn("[K-means clustering]", desc)
+            self.assertNotIn("[K-means]", desc)
+            self.assertNotIn(" K-means ", desc)
+
 
 class TestMain(unittest.TestCase):
     def test_main_nonexistent_path_returns_1(self):
