@@ -1,6 +1,7 @@
 # resume-parser (resume-to-flock)
 
-Parse resume documents (DOCX/PDF) into flock-of-postcards data: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`.
+Parse resumes (DOCX/PDF) into `jobs.json`, `skills.json`, `categories.json`, and `other-sections.json`.
+LLM-driven skill term merges with manual approval.
 
 ## Installation (for consumers like resume-flock)
 
