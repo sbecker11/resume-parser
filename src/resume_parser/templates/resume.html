@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resume – {{ contact.name or 'Resume' }}</title>
+  <title>Resume - {{ contact.name or 'Resume' }}</title>
   <style>
     :root { --text: #222; --muted: #555; --line: #ddd; --bg: #fff; }
     * { box-sizing: border-box; }
@@ -65,7 +65,7 @@
     <div class="job">
       <div class="job-header">
         <span class="job-role">{{ job.role }}</span>
-        <span class="job-dates">{% if job.start %}{{ job.start }}{% endif %}{% if job.start and job.end %} – {% endif %}{% if job.end %}{{ job.end }}{% endif %}</span>
+        <span class="job-dates">{% if job.start %}{{ job.start }}{% endif %}{% if job.start and job.end %} - {% endif %}{% if job.end %}{{ job.end }}{% endif %}</span>
       </div>
       <div class="job-employer">{{ job.employer }}</div>
       {% if job.description_bullets %}
@@ -96,7 +96,7 @@
     <h2 class="section-head">Certifications</h2>
     {% for c in certifications %}
     <div class="cert">
-      <span class="cert-name">{{ c.name }}</span>{% if c.issuer %} – {{ c.issuer }}{% endif %}{% if c.date %} ({{ c.date }}){% endif %}
+      <span class="cert-name">{{ c.name }}</span>{% if c.issuer %} - {{ c.issuer }}{% endif %}{% if c.date %} ({{ c.date }}){% endif %}
     </div>
     {% endfor %}
   </section>

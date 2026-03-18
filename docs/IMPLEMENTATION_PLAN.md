@@ -149,7 +149,7 @@ resume-parser/
 
 ## Implementation order
 
-1. **Phase 1** – Extract HTML render to `render_resume_html.py` (repo root); remove from main pipeline; test.
-2. **Phase 2** – Add `skill_merge.py`; integrate merge step in `resume_to_flock.py`; add `--no-merge`.
-3. **Phase 3** – Confirm JSON writes stay lightweight (no code change if order is correct).
-4. **Tests** – Add unit and integration tests as each phase is completed.
+1. **Phase 1** - Extract HTML render to `render_resume_html.py` (repo root); remove from main pipeline; test.
+2. **Phase 2** - Add `skill_merge.py`; integrate merge step in `resume_to_flock.py`; add `--no-merge`.
+3. **Phase 3** - Confirm JSON writes stay lightweight (no code change if order is correct).
+4. **Tests** - Add unit and integration tests as each phase is completed.

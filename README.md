@@ -92,22 +92,22 @@ All files are written in the output folder (no subfolders). The output folder al
 - **Jobs** dictionary uses **jobID** as primary key. Job item has display name (role, employer), optional list of `skillIDs`.
 - **Categories** dictionary uses **categoryID** as primary key. Category item has display name (`name`), optional list of `skillIDs`.
 
-- **jobs.json** – Jobs dict keyed by jobID (resume-flock format). Each job has role, employer, start, end, Description, skillIDs, etc.
-- **skills.json** – Skills dict keyed by skillID (slug): `{ "skillID": { "name": "Display Name", "url": "", "img": "", "categoryIDs": ["id1", ...], "jobIDs": [0, 1, ...] }, ... }`. Same structure as jobs and categories (ID as key, display name inside). Includes skills from job descriptions (with job indices in `jobIDs`) plus any from the resume’s skills section (`jobIDs` empty). `categoryIDs` reference **categories.json** for display names.
-- **categories.json** – Categories dict keyed by categoryID (resume-flock format). Each category has name, skillIDs.
-- **other-sections.json** – Contact, title, summary, certifications, websites, custom_sections, skills (resume-flock format).
-- **meta.json** – Resume metadata for list UI: id, displayName, createdAt, fileName, jobCount, skillCount.
-- **resume.html** – Rendered resume (generate with `render-resume-html -i /path/to/output` or `--render`).
-- **resume_template.html** – Copy of the template (written when generating resume.html).
+- **jobs.json** - Jobs dict keyed by jobID (resume-flock format). Each job has role, employer, start, end, Description, skillIDs, etc.
+- **skills.json** - Skills dict keyed by skillID (slug): `{ "skillID": { "name": "Display Name", "url": "", "img": "", "categoryIDs": ["id1", ...], "jobIDs": [0, 1, ...] }, ... }`. Same structure as jobs and categories (ID as key, display name inside). Includes skills from job descriptions (with job indices in `jobIDs`) plus any from the resume’s skills section (`jobIDs` empty). `categoryIDs` reference **categories.json** for display names.
+- **categories.json** - Categories dict keyed by categoryID (resume-flock format). Each category has name, skillIDs.
+- **other-sections.json** - Contact, title, summary, certifications, websites, custom_sections, skills (resume-flock format).
+- **meta.json** - Resume metadata for list UI: id, displayName, createdAt, fileName, jobCount, skillCount.
+- **resume.html** - Rendered resume (generate with `render-resume-html -i /path/to/output` or `--render`).
+- **resume_template.html** - Copy of the template (written when generating resume.html).
 
 ## Pipeline
 
-1. **Extract** – python-docx (DOCX) or pdfplumber (PDF) → raw text
-2. **Parse jobs** – LLM (Anthropic) extracts structured jobs with dates and descriptions
-3. **Parse resume sections** – LLM extracts contact, summary, certifications, skills, other sections → `resume_meta.json`
-4. **Extract skills** – Regex `[text]{img}(url)` from job descriptions; merge resume skills section
-5. **Enrich** – Optional LLM pass to suggest URLs for skills without one
-6. **Categorize** – LLM assigns each skill a list of categories (e.g. Programming Language, Framework) → `skills.json`
+1. **Extract** - python-docx (DOCX) or pdfplumber (PDF) → raw text
+2. **Parse jobs** - LLM (Anthropic) extracts structured jobs with dates and descriptions
+3. **Parse resume sections** - LLM extracts contact, summary, certifications, skills, other sections → `resume_meta.json`
+4. **Extract skills** - Regex `[text]{img}(url)` from job descriptions; merge resume skills section
+5. **Enrich** - Optional LLM pass to suggest URLs for skills without one
+6. **Categorize** - LLM assigns each skill a list of categories (e.g. Programming Language, Framework) → `skills.json`
 
 ### HTML generation (optional)
 
