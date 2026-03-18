@@ -163,8 +163,36 @@ def reconcile_job_descriptions_in_dir(dir_path: Path, render: bool) -> bool:
     norm_to_names: list[tuple[str, str]] = [(name, _normalize_term(name)) for name in current_skill_names]
     bracket_terms = _extract_bracket_terms_from_jobs(jobs_list)
 
+    # Also infer possible "source" terms even when they are not bracketed yet.
+    # We do this by taking short prefixes of the current skill display names.
+    # Example: "K-means clustering" -> candidate source "K-means".
+    def _prefix_sources_from_skill_names(names: list[str]) -> set[str]:
+        out: set[str] = set()
+        for n in names:
+            words = [w for w in str(n).split() if w.strip()]
+            # Only shorter prefixes (not the full name).
+            for i in range(1, max(1, len(words))):
+                if i >= len(words):
+                    break
+                prefix = " ".join(words[:i]).strip()
+                if prefix:
+                    out.add(prefix)
+        return out
+
+    prefix_sources = _prefix_sources_from_skill_names(current_skill_names)
+
+    # Limit inferred sources to those that actually occur in job descriptions.
+    # This avoids accidentally bracketing prefixes that don't appear in the text.
+    combined_desc = "\n".join((j.get("Description") or "") for j in jobs_list)
+    def _appears_in_text(src: str) -> bool:
+        if not src:
+            return False
+        return re.search(re.escape(src), combined_desc, flags=re.IGNORECASE) is not None
+
+    src_candidates = {s for s in (bracket_terms | prefix_sources) if _appears_in_text(s)}
+
     src_to_tgt: dict[str, str] = {}
-    for src in bracket_terms:
+    for src in src_candidates:
         src_norm = _normalize_term(src)
         if not src_norm or len(src_norm) < 3:
             continue
