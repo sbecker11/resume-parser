@@ -103,7 +103,7 @@ class TestRenderResumeHtml(unittest.TestCase):
             html = resume_path.read_text()
             self.assertIn('href="https://example.com"', html)
 
-    def test_render_with_resume_flock_format(self):
+    def test_render_with_resume_flyer_format(self):
         """render_resume_html handles PARSED-RESUME-FORMAT: custom_sections, websites, certifications {name,url,description}."""
         jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "", "skillIDs": []}}
         skills = {}

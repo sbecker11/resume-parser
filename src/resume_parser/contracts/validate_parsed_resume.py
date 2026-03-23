@@ -77,6 +77,12 @@ def validate_skills(data: dict) -> None:
     validator.validate(data)
 
 
+def validate_education(data: dict) -> None:
+    """Validate education (object keyed by educationID). Raises ValidationError on failure."""
+    validator = _build_validator("education")
+    validator.validate(data)
+
+
 def validate_categories(data: dict) -> None:
     """Validate categories (object keyed by categoryID). Raises ValidationError on failure."""
     validator = _build_validator("categories")
@@ -108,6 +114,12 @@ def validate_folder(folder: str | Path) -> list[str]:
         jobs = _load_json(jobs_path)
         validate_jobs(jobs)
         validated.append("jobs.json")
+
+    education_path = folder / "education.json"
+    if education_path.exists():
+        education = _load_json(education_path)
+        validate_education(education)
+        validated.append("education.json")
 
     skills_path = folder / "skills.json"
     if skills_path.exists():

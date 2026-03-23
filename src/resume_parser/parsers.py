@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Parse extracted resume text into jobs and skills for flock-of-postcards.
+Parse extracted resume text into jobs and skills for resume-flyer.
 """
 
 import json
@@ -19,6 +19,18 @@ _PAREN_SKILL_PATTERN = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*$")
 # Name = token(s) immediately before " ("; allow / and - (e.g. CI/CD, AWS)
 _PAREN_SKILL_AT_START = re.compile(r"^([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)", re.MULTILINE)
 _PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)")
+
+_EDU_HEADING_RE = re.compile(r"^\s*education\s*$", re.IGNORECASE)
+_SECTION_HEADING_RE = re.compile(r"^\s*[A-Z][A-Z0-9 /&-]{2,}\s*$")
+_SCHOOL_RE = re.compile(
+    r"\b(university|college|institute|school|academy|polytechnic)\b",
+    re.IGNORECASE,
+)
+_DEGREE_RE = re.compile(
+    r"\b(b\.?\s?s\.?|bachelor|m\.?\s?s\.?|master|ph\.?\s?d\.?|doctorate|mba|associate)\b",
+    re.IGNORECASE,
+)
+_YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
 
 
 def expand_skill_parens(name: str) -> list[str]:
@@ -163,6 +175,92 @@ def _parse_llm_json(text: str) -> dict[str, Any]:
     )
 
 
+def _looks_like_education_job(job: dict[str, Any]) -> bool:
+    role = str(job.get("role") or "")
+    employer = str(job.get("employer") or "")
+    hay = f"{role} {employer}"
+    return bool(_SCHOOL_RE.search(hay) or _DEGREE_RE.search(hay))
+
+
+def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
+    """
+    Heuristic fallback extraction for education when LLM misses it.
+    Produces parse_jobs-compatible entries.
+    """
+    lines = [ln.strip() for ln in (raw_text or "").splitlines()]
+    if not lines:
+        return []
+
+    starts: list[int] = [i for i, ln in enumerate(lines) if _EDU_HEADING_RE.match(ln)]
+    if not starts:
+        return []
+
+    out: list[dict[str, Any]] = []
+    for start in starts:
+        block: list[str] = []
+        for ln in lines[start + 1 :]:
+            if not ln:
+                if block:
+                    block.append("")
+                continue
+            if _SECTION_HEADING_RE.match(ln):
+                break
+            block.append(ln)
+
+        if not block:
+            continue
+
+        # Split into chunks by blank lines (one chunk ~= one education entry)
+        chunks: list[list[str]] = []
+        cur: list[str] = []
+        for ln in block:
+            if ln == "":
+                if cur:
+                    chunks.append(cur)
+                    cur = []
+            else:
+                cur.append(ln)
+        if cur:
+            chunks.append(cur)
+
+        for chunk in chunks:
+            school = ""
+            role = "Education"
+            for ln in chunk:
+                if _SCHOOL_RE.search(ln):
+                    school = ln
+                    break
+            if not school:
+                continue
+
+            for ln in chunk:
+                if ln != school and _DEGREE_RE.search(ln):
+                    role = ln
+                    break
+
+            # _YEAR_RE has a capturing group; recover full years using finditer.
+            year_full = [m.group(0) for m in _YEAR_RE.finditer(" ".join(chunk))]
+            start_year = year_full[0] if len(year_full) >= 1 else ""
+            end_year = year_full[1] if len(year_full) >= 2 else ""
+            start = f"{start_year}-01-01" if start_year else ""
+            end = f"{end_year}-12-31" if end_year else ""
+
+            desc_lines = [ln for ln in chunk if ln not in {school, role}]
+            description = " • ".join(desc_lines) if desc_lines else ""
+            out.append(
+                {
+                    "role": role,
+                    "employer": school,
+                    "start": start,
+                    "end": end,
+                    "employer_city": None,
+                    "employer_website": None,
+                    "description": description,
+                }
+            )
+    return out
+
+
 def parse_jobs_with_llm(raw_text: str) -> list[dict[str, Any]]:
     """
     Use LLM (LLM_PROVIDER=anthropic, ANTHROPIC_API_KEY) to extract structured jobs from resume text.
@@ -198,7 +296,10 @@ Rules:
     user_prompt = f"Extract all work experience and education from this resume:\n\n{raw_text}"
     text = _call_llm(system_prompt, user_prompt)
     data = _parse_llm_json(text)
-    return data.get("jobs", [])
+    jobs = data.get("jobs", []) or []
+    if not any(_looks_like_education_job(j) for j in jobs):
+        jobs.extend(_extract_education_jobs_from_text(raw_text))
+    return jobs
 
 
 def parse_resume_sections(raw_text: str) -> dict[str, Any]:
@@ -413,9 +514,9 @@ def assign_skill_ids(skills: dict[str, dict[str, Any]]) -> None:
     return
 
 
-def jobs_to_flock_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def jobs_to_flyer_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
-    Convert parsed jobs to flock-of-postcards jobs.json format.
+    Convert parsed jobs to resume-flyer jobs.json format.
     Adds index, z-index, css name, css RGB, text color, Description.
     """
     result = []
@@ -426,7 +527,7 @@ def jobs_to_flock_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         text_color = "#000000" if luminance > 0.5 else "#FFFFFF"
 
-        flock_job = {
+        flyer_job = {
             "index": i,
             "role": (job.get("role") or "").strip(),
             "employer": (job.get("employer") or "").strip(),
@@ -439,7 +540,7 @@ def jobs_to_flock_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "text color": text_color,
             "Description": (job.get("description") or "").strip(),
         }
-        result.append(flock_job)
+        result.append(flyer_job)
     return result
 
 

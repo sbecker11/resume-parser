@@ -2,7 +2,7 @@
 
 A **parsed resume** is a directory under `parsed_resumes/<id>/` containing the original resume file (optional), parser output files, and metadata. The app loads jobs/skills from these directories via `GET /api/resumes/:id/data`.
 
-**Contract:** Owned and maintained by resume-parser; consumers (e.g. resume-flock) implement against this specification.
+**Contract:** Owned and maintained by resume-parser; consumers (e.g. resume-flyer) implement against this specification.
 
 **Version:** 1.0
 
@@ -93,7 +93,7 @@ Publications: https://independent.academia.edu/shawnbecker
 Patents: https://patents.justia.com/inventor/shawn-c-becker
 LinkedIn: https://www.linkedin.com/in/shawnbecker
 GitHub: https://github.com/sbecker11
-Portfolio: https://sbecker11.github.io/flock-of-postcards
+Portfolio: https://sbecker11.github.io/resume-flyer
 ```
 
 the parser should emit **each line as its own entry** in the `websites` array:
@@ -106,7 +106,7 @@ export const otherSections = {
     { label: "Patents", url: "https://patents.justia.com/inventor/shawn-c-becker" },
     { label: "LinkedIn", url: "https://www.linkedin.com/in/shawnbecker" },
     { label: "GitHub", url: "https://github.com/sbecker11" },
-    { label: "Portfolio", url: "https://sbecker11.github.io/flock-of-postcards" }
+    { label: "Portfolio", url: "https://sbecker11.github.io/resume-flyer" }
   ]
   // ... other fields
 };
@@ -116,9 +116,9 @@ Each item has `label` (the text before the colon) and `url`. Optional `descripti
 
 ## Using a parsed resume from another directory
 
-The app reads only from **resume-flock's** `parsed_resumes/` directory (project root). To use a folder you created elsewhere (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`):
+The app reads only from **resume-flyer's** `parsed_resumes/` directory (project root). To use a folder you created elsewhere (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`):
 
-1. **Copy or symlink** that folder into resume-flock's `parsed_resumes/` under the same id:
+1. **Copy or symlink** that folder into resume-flyer's `parsed_resumes/` under the same id:
    - From repo root:  
      `cp -r ~/workspace-resume/parsed-resumes/parsed-resume-1 ./parsed_resumes/parsed-resume-1`  
    - or:  
@@ -157,8 +157,8 @@ Set and persist in `app_state.json` under `user-settings.currentResumeId`; the a
 
 ### Using a parsed resume (steps that work)
 
-1. **Parser output** (e.g. from `resume-to-flock` in workspace-resume/resume-parser): writes a **flattened** output folder (no subfolders) with `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, and a **copy of the original resume** (DOCX/PDF) under its original filename (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`).
-2. **Symlink into resume-flock** (from resume-flock repo root):  
+1. **Parser output** (e.g. from `resume-to-flyer` in workspace-resume/resume-parser): writes a **flattened** output folder (no subfolders) with `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, and a **copy of the original resume** (DOCX/PDF) under its original filename (e.g. `~/workspace-resume/parsed-resumes/parsed-resume-1/`).
+2. **Symlink into resume-flyer** (from resume-flyer repo root):  
    `ln -s ~/workspace-resume/parsed-resumes/parsed-resume-1 ./parsed_resumes/parsed-resume-1`
 3. **Set default resume in app state**: In `app_state.json`, set `user-settings.currentResumeId` to `"parsed-resume-1"` (or `null` for static default).
 4. **Start app**: `npm run dev`. Jobs load from the API; Timeline, CardsController, and resume list reinitialize from the loaded jobs.
@@ -176,26 +176,26 @@ CardsController now initializes when **either** (1) `scene-plane-ready` fires **
 
 ## Invoking the parser (next objective)
 
-To run the parse-resume pipeline from resume-flock given a `resume.docx` path:
+To run the parse-resume pipeline from resume-flyer given a `resume.docx` path:
 
-- **Parser**: `resume-to-flock` (in a separate repo, e.g. `RESUME_PARSER_PATH` or `~/workspace-resume/resume-parser`).
-- **Invocation**: `resume-to-flock <path-to-resume.docx> -o <output-dir>`.
+- **Parser**: `resume-to-flyer` (in a separate repo, e.g. `RESUME_PARSER_PATH` or `~/workspace-resume/resume-parser`).
+- **Invocation**: `resume-to-flyer <path-to-resume.docx> -o <output-dir>`.
 - **Output dir**: Typically `parsed_resumes/<id>/` (or an external path like `~/workspace-resume/parsed-resumes/parsed-resume-1`). The parser writes a flattened folder: `jobs.json`, `skills.json`, `categories.json`, `other-sections.json`, and a copy of the input resume file (original filename).
 
-**Script:** A parse-resume script (e.g. npm script `parse-resume`) invokes the parser subprocess (`resume-to-flock ...`).
+**Script:** A parse-resume script (e.g. npm script `parse-resume`) invokes the parser subprocess (`resume-to-flyer ...`).
 
 ```bash
 # Local folder: input docx inside the output dir (from repo root)
 npm run parse-resume -- --docx ./parsed_resumes/parsed-resume-0/data-engineer-0.docx --out ./parsed_resumes/parsed-resume-0
 
-# Output to resume-flock's parsed_resumes/<id> (then symlink or use as currentResumeId)
+# Output to resume-flyer's parsed_resumes/<id> (then symlink or use as currentResumeId)
 npm run parse-resume -- --docx /path/to/your/resume.docx --id parsed-resume-2
 
 # Output to another repo (e.g. workspace-resume)
 npm run parse-resume -- --docx /path/to/your/resume.docx --out ~/workspace-resume/parsed-resumes/parsed-resume-1
 ```
 
-Set `RESUME_PARSER_PATH` if the parser repo is not at `../workspace-resume/resume-parser` relative to resume-flock. The script uses the parser's `venv/bin/python` when present.
+Set `RESUME_PARSER_PATH` if the parser repo is not at `../workspace-resume/resume-parser` relative to resume-flyer. The script uses the parser's `venv/bin/python` when present.
 
 ---
 

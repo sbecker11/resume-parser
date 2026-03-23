@@ -13,7 +13,7 @@ from resume_parser.parsers import (
     expand_skill_parens,
     expand_parens_in_text,
     get_llm_provider,
-    jobs_to_flock_format,
+    jobs_to_flyer_format,
     enrich_skills_with_llm,
     categorize_skills_with_llm,
     build_categories_dict,
@@ -307,15 +307,15 @@ class TestNormalizeDate(unittest.TestCase):
         self.assertEqual(_normalize_end_date("2023-12-31"), "2023-12-31")
 
 
-class TestJobsToFlockFormat(unittest.TestCase):
-    """Test parsers.jobs_to_flock_format."""
+class TestJobsToFlyerFormat(unittest.TestCase):
+    """Test parsers.jobs_to_flyer_format."""
 
     def test_empty_list(self):
-        self.assertEqual(jobs_to_flock_format([]), [])
+        self.assertEqual(jobs_to_flyer_format([]), [])
 
     def test_single_job(self):
         jobs = [{"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "description": "Did stuff."}]
-        out = jobs_to_flock_format(jobs)
+        out = jobs_to_flyer_format(jobs)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["index"], 0)
         self.assertEqual(out[0]["role"], "Engineer")
@@ -328,16 +328,16 @@ class TestJobsToFlockFormat(unittest.TestCase):
 
     def test_multiple_jobs_rotation(self):
         jobs = [{"role": "A", "employer": "E1", "start": "", "end": "", "description": ""}] * 2
-        out = jobs_to_flock_format(jobs)
+        out = jobs_to_flyer_format(jobs)
         self.assertEqual(out[0]["z-index"], 1)
         self.assertEqual(out[1]["z-index"], 2)
 
     def test_description_expands_parens(self):
-        # Expansion is done before jobs_to_flock_format (e.g. in resume_to_flock)
+        # Expansion is done before jobs_to_flyer_format (e.g. in resume_to_flyer)
         jobs = [{"role": "Dev", "employer": "Co", "start": "", "end": "", "description": "Used AWS (S3, EC2, Lambda) for infra."}]
         for job in jobs:
             job["description"] = expand_parens_in_text((job.get("description") or "").strip())
-        out = jobs_to_flock_format(jobs)
+        out = jobs_to_flyer_format(jobs)
         self.assertEqual(out[0]["Description"], "Used AWS S3, AWS EC2, AWS Lambda for infra.")
 
 
@@ -378,6 +378,42 @@ class TestParseJobsWithLlm(unittest.TestCase):
         result = parse_jobs_with_llm("x")
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["role"], "R")
+
+    @patch("resume_parser.parsers._call_llm")
+    def test_adds_education_from_text_when_llm_misses_it(self, mock_call_llm):
+        mock_call_llm.return_value = '{"jobs": [{"role": "Engineer", "employer": "Acme", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"}]}'
+        raw_text = (
+            "EXPERIENCE\n"
+            "Engineer at Acme\n\n"
+            "EDUCATION\n"
+            "University of Example\n"
+            "B.S. Computer Science\n"
+            "2016 - 2020\n"
+        )
+        result = parse_jobs_with_llm(raw_text)
+        self.assertTrue(any("University of Example" in (j.get("employer") or "") for j in result))
+        edu = [j for j in result if "University of Example" in (j.get("employer") or "")]
+        self.assertEqual(edu[0]["role"], "B.S. Computer Science")
+        self.assertEqual(edu[0]["start"], "2016-01-01")
+        self.assertEqual(edu[0]["end"], "2020-12-31")
+
+    @patch("resume_parser.parsers._call_llm")
+    def test_does_not_duplicate_when_llm_already_has_education(self, mock_call_llm):
+        mock_call_llm.return_value = (
+            '{"jobs": ['
+            '{"role": "Engineer", "employer": "Acme", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"},'
+            '{"role": "B.S. Computer Science", "employer": "University of Example", "start": "2016-01-01", "end": "2020-12-31", "description": ""}'
+            ']}'
+        )
+        raw_text = (
+            "EDUCATION\n"
+            "University of Example\n"
+            "B.S. Computer Science\n"
+            "2016 - 2020\n"
+        )
+        result = parse_jobs_with_llm(raw_text)
+        edu = [j for j in result if "University of Example" in (j.get("employer") or "")]
+        self.assertEqual(len(edu), 1)
 
 
 class TestParseResumeSections(unittest.TestCase):

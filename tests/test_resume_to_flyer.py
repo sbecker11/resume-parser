@@ -1,13 +1,14 @@
-"""Tests for resume_parser.resume_to_flock to achieve >= 80% coverage."""
+"""Tests for resume_parser.resume_to_flyer to achieve >= 80% coverage."""
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from resume_parser.resume_to_flock import (
+from resume_parser.resume_to_flyer import (
     _default_output_dir,
     _write_jobs_json,
+    _write_education_json,
     _write_skills_json,
     _write_categories_json,
     _write_other_sections_json,
@@ -54,6 +55,25 @@ class TestWriters(unittest.TestCase):
             self.assertIn("python", data)
             self.assertEqual(data["python"]["name"], "Python")
 
+    def test_write_education_json(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            education = {
+                "0": {
+                    "index": 0,
+                    "degree": "B.S. Computer Science",
+                    "institution": "University of Example",
+                    "start": "2016-01-01",
+                    "end": "2020-12-31",
+                    "description": "",
+                }
+            }
+            path = _write_education_json(education, out)
+            self.assertTrue(path.exists())
+            self.assertEqual(path.suffix, ".json")
+            data = json.loads(path.read_text())
+            self.assertEqual(data["0"]["institution"], "University of Example")
+
     def test_write_categories_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
@@ -74,7 +94,7 @@ class TestWriters(unittest.TestCase):
             data = json.loads(path.read_text())
             self.assertIn("contact", data)
 
-    def test_other_sections_resume_flock_schema(self):
+    def test_other_sections_resume_flyer_schema(self):
         """other-sections.json output matches PARSED-RESUME-FORMAT: certifications {name,url,description}, websites, custom_sections."""
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
@@ -124,7 +144,7 @@ class TestWriters(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def test_file_not_found_returns_1(self):
-        with patch("sys.argv", ["resume-to-flock", "/nonexistent/resume.docx"]):
+        with patch("sys.argv", ["resume-to-flyer", "/nonexistent/resume.docx"]):
             result = main()
             self.assertEqual(result, 1)
 
@@ -133,8 +153,8 @@ class TestMain(unittest.TestCase):
             f.write(b"dummy")
             resume_path = f.name
         try:
-            with patch("resume_parser.resume_to_flock.extract_text", return_value="Sample resume text here."):
-                with patch("sys.argv", ["resume-to-flock", resume_path, "--no-llm"]):
+            with patch("resume_parser.resume_to_flyer.extract_text", return_value="Sample resume text here."):
+                with patch("sys.argv", ["resume-to-flyer", resume_path, "--no-llm"]):
                     with patch("builtins.print"):
                         result = main()
             self.assertEqual(result, 0)
@@ -149,7 +169,8 @@ class TestMain(unittest.TestCase):
             with tempfile.TemporaryDirectory() as out_d:
                 out_dir = Path(out_d)
                 jobs_data = [
-                    {"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "", "description": "Did Python."}
+                    {"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "", "description": "Did Python."},
+                    {"role": "B.S. Computer Science", "employer": "University of Example", "start": "2016-01-01", "end": "2020-12-31", "description": ""},
                 ]
                 resume_meta = {
                     "contact": {},
@@ -163,13 +184,13 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [], "categories": ["Programming Language"]},
                 }
 
-                with patch("resume_parser.resume_to_flock.extract_text", return_value="Resume text"):
-                    with patch("resume_parser.resume_to_flock.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_parser.resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_parser.resume_to_flock.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_parser.resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
-                                        with patch("sys.argv", ["resume-to-flock", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
+                with patch("resume_parser.resume_to_flyer.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_flyer.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_flyer.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_flyer.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_flyer.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_flyer.categorize_skills_with_llm", return_value=skills_with_cats):
+                                        with patch("sys.argv", ["resume-to-flyer", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
                                             with patch("builtins.print"):
                                                 result = main()
                 self.assertEqual(result, 0)
@@ -181,6 +202,7 @@ class TestMain(unittest.TestCase):
                 self.assertEqual(copy_size, orig_size, f"Copy file size {copy_size} should match original {orig_size}")
                 self.assertEqual(resume_copy.read_bytes(), Path(resume_path).read_bytes(), "Copy should match original")
                 self.assertTrue((out_dir / "jobs.json").exists())
+                self.assertTrue((out_dir / "education.json").exists())
                 self.assertTrue((out_dir / "skills.json").exists())
                 self.assertTrue((out_dir / "categories.json").exists())
                 self.assertTrue((out_dir / "other-sections.json").exists())
@@ -206,15 +228,15 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                     "Java": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                 }
-                with patch("resume_parser.resume_to_flock.extract_text", return_value="Resume text"):
-                    with patch("resume_parser.resume_to_flock.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_parser.resume_to_flock.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_parser.resume_to_flock.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_parser.resume_to_flock.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_parser.resume_to_flock.categorize_skills_with_llm", return_value=skills_with_cats):
+                with patch("resume_parser.resume_to_flyer.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_flyer.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_flyer.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_flyer.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_flyer.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_flyer.categorize_skills_with_llm", return_value=skills_with_cats):
                                         merge_mock = MagicMock()
-                                        with patch("resume_parser.resume_to_flock.run_merge_interactive", merge_mock):
-                                            with patch("sys.argv", ["resume-to-flock", resume_path, "-o", str(out_dir), "--no-merge"]):
+                                        with patch("resume_parser.resume_to_flyer.run_merge_interactive", merge_mock):
+                                            with patch("sys.argv", ["resume-to-flyer", resume_path, "-o", str(out_dir), "--no-merge"]):
                                                 with patch("builtins.print"):
                                                     result = main()
                 self.assertEqual(result, 0)

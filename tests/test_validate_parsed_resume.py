@@ -22,6 +22,10 @@ def _minimal_skills():
     return {"python": {"name": "Python", "url": None, "img": None, "categoryIDs": [], "jobIDs": []}}
 
 
+def _minimal_education():
+    return {"0": {"index": 0, "degree": "B.S. Computer Science", "institution": "University", "start": "2016-01-01", "end": "2020-12-31", "description": ""}}
+
+
 def _minimal_categories():
     return {"lang": {"name": "Language", "skillIDs": []}}
 
@@ -70,6 +74,15 @@ class TestValidateCategories(unittest.TestCase):
             vpr.validate_categories([])  # must be object
 
 
+class TestValidateEducation(unittest.TestCase):
+    def test_valid_education(self):
+        vpr.validate_education(_minimal_education())
+
+    def test_invalid_education_raises(self):
+        with self.assertRaises(jsonschema.ValidationError):
+            vpr.validate_education([])  # must be object
+
+
 class TestValidateOtherSections(unittest.TestCase):
     def test_valid_other_sections(self):
         vpr.validate_other_sections(_minimal_other_sections())
@@ -93,6 +106,7 @@ class TestValidateFolder(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
             (folder / "jobs.json").write_text(json.dumps(_minimal_jobs_dict()), encoding="utf-8")
+            (folder / "education.json").write_text(json.dumps(_minimal_education()), encoding="utf-8")
             (folder / "skills.json").write_text(json.dumps(_minimal_skills()), encoding="utf-8")
             (folder / "categories.json").write_text(json.dumps(_minimal_categories()), encoding="utf-8")
             (folder / "other-sections.json").write_text(json.dumps(_minimal_other_sections()), encoding="utf-8")
@@ -100,11 +114,12 @@ class TestValidateFolder(unittest.TestCase):
 
             result = vpr.validate_folder(folder)
             self.assertIn("jobs.json", result)
+            self.assertIn("education.json", result)
             self.assertIn("skills.json", result)
             self.assertIn("categories.json", result)
             self.assertIn("other-sections.json", result)
             self.assertIn("meta.json", result)
-            self.assertEqual(len(result), 5)
+            self.assertEqual(len(result), 6)
 
     def test_validate_folder_only_validates_existing_files(self):
         with tempfile.TemporaryDirectory() as d:
@@ -142,6 +157,7 @@ class TestMain(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
             (folder / "jobs.json").write_text(json.dumps(_minimal_jobs_dict()), encoding="utf-8")
+            (folder / "education.json").write_text(json.dumps(_minimal_education()), encoding="utf-8")
             (folder / "skills.json").write_text(json.dumps(_minimal_skills()), encoding="utf-8")
             (folder / "categories.json").write_text(json.dumps(_minimal_categories()), encoding="utf-8")
             (folder / "other-sections.json").write_text(json.dumps(_minimal_other_sections()), encoding="utf-8")

@@ -1,6 +1,6 @@
 # Manual Smoke Test: resume-parser
 
-Covers all four CLI utilities: `resume-to-flock`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume` (install the package first: `pip install -e .`).
+Covers all four CLI utilities: `resume-to-flyer`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume` (install the package first: `pip install -e .`).
 
 ## Prerequisites
 
@@ -11,10 +11,10 @@ Covers all four CLI utilities: `resume-to-flock`, `render-resume-html`, `run-mer
 
 ---
 
-## 1. Full pipeline (parse → JSON) — `resume-to-flock`
+## 1. Full pipeline (parse → JSON) — `resume-to-flyer`
 
 ```bash
-resume-to-flock tests/test-resume.docx -o /tmp/resume-output
+resume-to-flyer tests/test-resume.docx -o /tmp/resume-output
 ```
 
 - [ ] Exits without errors
@@ -23,10 +23,10 @@ resume-to-flock tests/test-resume.docx -o /tmp/resume-output
 
 ---
 
-## 2. Full pipeline with `--no-merge` (non-interactive) — `resume-to-flock`
+## 2. Full pipeline with `--no-merge` (non-interactive) — `resume-to-flyer`
 
 ```bash
-resume-to-flock tests/test-resume.docx -o /tmp/resume-output --no-merge
+resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge
 ```
 
 - [ ] Runs without prompts
@@ -34,10 +34,10 @@ resume-to-flock tests/test-resume.docx -o /tmp/resume-output --no-merge
 
 ---
 
-## 3. Full pipeline with HTML render — `resume-to-flock`
+## 3. Full pipeline with HTML render — `resume-to-flyer`
 
 ```bash
-resume-to-flock tests/test-resume.docx -o /tmp/resume-output --no-merge --render
+resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge --render
 ```
 
 - [ ] `resume.html` and `resume_template.html` exist
@@ -45,10 +45,10 @@ resume-to-flock tests/test-resume.docx -o /tmp/resume-output --no-merge --render
 
 ---
 
-## 4. Skill merge (interactive) — `resume-to-flock`
+## 4. Skill merge (interactive) — `resume-to-flyer`
 
 ```bash
-resume-to-flock tests/test-resume.docx -o /tmp/resume-output
+resume-to-flyer tests/test-resume.docx -o /tmp/resume-output
 ```
 
 (Use a resume with multiple skills; skip `--no-merge` for this step.)
@@ -107,10 +107,10 @@ validate-parsed-resume /tmp/resume-output
 
 ---
 
-## 8. Text extraction only — `resume-to-flock`
+## 8. Text extraction only — `resume-to-flyer`
 
 ```bash
-resume-to-flock tests/test-resume.docx --no-llm
+resume-to-flyer tests/test-resume.docx --no-llm
 ```
 
 - [ ] Prints first ~500 characters of extracted text

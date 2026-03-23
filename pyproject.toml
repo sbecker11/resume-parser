@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "resume-parser"
 version = "1.0.0"
-description = "Parse resume documents (DOCX/PDF) into flock-of-postcards JSON and HTML"
+description = "Parse resume documents (DOCX/PDF) into flyer-of-postcards JSON and HTML"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -28,7 +28,7 @@ dev = [
 ]
 
 [project.scripts]
-resume-to-flock = "resume_parser.resume_to_flock:main"
+resume-to-flyer = "resume_parser.resume_to_flyer:main"
 render-resume-html = "resume_parser.render_resume_html:main"
 run-merge-on-parsed = "resume_parser.run_merge_on_parsed:main"
 validate-parsed-resume = "resume_parser.contracts.validate_parsed_resume:main"
