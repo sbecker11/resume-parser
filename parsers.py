@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Parse extracted resume text into jobs and skills for resume-flyer.
+Parse extracted resume text into jobs and skills for resume-consumer.
 """
 
 import json
@@ -480,9 +480,9 @@ def assign_skill_ids(skills: dict[str, dict[str, Any]]) -> None:
     return
 
 
-def jobs_to_flyer_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def jobs_to_json_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
-    Convert parsed jobs to resume-flyer jobs.json format.
+    Convert parsed jobs to resume-consumer jobs.json format.
     Adds index, z-index, css name, css RGB, text color, Description.
     """
     result = []
@@ -493,7 +493,7 @@ def jobs_to_flyer_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         text_color = "#000000" if luminance > 0.5 else "#FFFFFF"
 
-        flyer_job = {
+        json_job = {
             "index": i,
             "role": (job.get("role") or "").strip(),
             "employer": (job.get("employer") or "").strip(),
@@ -506,7 +506,7 @@ def jobs_to_flyer_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "text color": text_color,
             "Description": (job.get("description") or "").strip(),
         }
-        result.append(flyer_job)
+        result.append(json_job)
     return result
 
 

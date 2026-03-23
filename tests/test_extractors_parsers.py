@@ -13,7 +13,7 @@ from resume_parser.parsers import (
     expand_skill_parens,
     expand_parens_in_text,
     get_llm_provider,
-    jobs_to_flyer_format,
+    jobs_to_json_format,
     enrich_skills_with_llm,
     categorize_skills_with_llm,
     build_categories_dict,
@@ -308,14 +308,14 @@ class TestNormalizeDate(unittest.TestCase):
 
 
 class TestJobsToFlyerFormat(unittest.TestCase):
-    """Test parsers.jobs_to_flyer_format."""
+    """Test parsers.jobs_to_json_format."""
 
     def test_empty_list(self):
-        self.assertEqual(jobs_to_flyer_format([]), [])
+        self.assertEqual(jobs_to_json_format([]), [])
 
     def test_single_job(self):
         jobs = [{"role": "Engineer", "employer": "Acme", "start": "2020-01-01", "end": "CURRENT_DATE", "description": "Did stuff."}]
-        out = jobs_to_flyer_format(jobs)
+        out = jobs_to_json_format(jobs)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["index"], 0)
         self.assertEqual(out[0]["role"], "Engineer")
@@ -328,16 +328,16 @@ class TestJobsToFlyerFormat(unittest.TestCase):
 
     def test_multiple_jobs_rotation(self):
         jobs = [{"role": "A", "employer": "E1", "start": "", "end": "", "description": ""}] * 2
-        out = jobs_to_flyer_format(jobs)
+        out = jobs_to_json_format(jobs)
         self.assertEqual(out[0]["z-index"], 1)
         self.assertEqual(out[1]["z-index"], 2)
 
     def test_description_expands_parens(self):
-        # Expansion is done before jobs_to_flyer_format (e.g. in resume_to_flyer)
+        # Expansion is done before jobs_to_json_format (e.g. in resume_to_json)
         jobs = [{"role": "Dev", "employer": "Co", "start": "", "end": "", "description": "Used AWS (S3, EC2, Lambda) for infra."}]
         for job in jobs:
             job["description"] = expand_parens_in_text((job.get("description") or "").strip())
-        out = jobs_to_flyer_format(jobs)
+        out = jobs_to_json_format(jobs)
         self.assertEqual(out[0]["Description"], "Used AWS S3, AWS EC2, AWS Lambda for infra.")
 
 

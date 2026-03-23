@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate resume.html from JSON files. Run separately after resume-to-flyer.
+Generate resume.html from JSON files. Run separately after resume-to-json.
 
 Usage:
   render-resume-html -i /path/to/output-folder
@@ -8,18 +8,28 @@ Usage:
 Reads jobs.json, skills.json, categories.json, other-sections.json from the input dir.
 Writes resume.html and resume_template.html to the same dir.
 
-Contract: see contracts/RENDER_RESUME_HTML-v1.0.md (used by resume-flyer to invoke this script).
+Contract: see contracts/RENDER_RESUME_HTML-v1.0.md (used by resume-consumer to invoke this script).
 """
 
 import argparse
 import json
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 # Templates live next to this package module (works when installed)
 _PKG_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = _PKG_DIR / "templates"
+
+
+@dataclass(frozen=True)
+class ResumeModel:
+    """In-memory resume representation loaded from JSON files."""
+    jobs: dict
+    skills: dict
+    categories: dict
+    other_sections: dict
 
 
 def _load_json(path: Path) -> dict | list:
@@ -91,14 +101,10 @@ def _build_skills_by_category(categories: dict, skills: dict) -> list[dict]:
     return result
 
 
-def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tuple[Path, Path]:
+def load_resume_from_json(input_dir: Path) -> ResumeModel:
     """
-    Read JSON files from input_dir, render HTML, write resume.html and resume_template.html.
-    If skip_square_brackets is True (default), remove [ and ] from job descriptions, summary, and other section content.
-    Returns (resume_path, template_copy_path).
+    Load required parsed-resume JSON files from disk into an in-memory model.
     """
-    from jinja2 import Environment, FileSystemLoader
-
     jobs_path = input_dir / "jobs.json"
     skills_path = input_dir / "skills.json"
     categories_path = input_dir / "categories.json"
@@ -108,12 +114,25 @@ def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tu
         if not p.exists():
             raise FileNotFoundError(f"Missing {p.name} in {input_dir}")
 
-    jobs_dict = _load_json(jobs_path)
-    skills_dict = _load_json(skills_path)
-    categories_dict = _load_json(categories_path)
-    other = _load_json(other_path)
+    return ResumeModel(
+        jobs=_load_json(jobs_path),
+        skills=_load_json(skills_path),
+        categories=_load_json(categories_path),
+        other_sections=_load_json(other_path),
+    )
 
-    jobs_list = _jobs_dict_to_list(jobs_dict)
+
+def render_resume_model(
+    model: ResumeModel,
+    output_dir: Path,
+    skip_square_brackets: bool = True,
+) -> tuple[Path, Path]:
+    """
+    Render HTML from an in-memory resume model and write output files.
+    """
+    from jinja2 import Environment, FileSystemLoader
+
+    jobs_list = _jobs_dict_to_list(model.jobs)
     jobs_with_bullets = []
     for job in jobs_list:
         bullets = _description_bullets(job.get("Description") or "")
@@ -121,17 +140,17 @@ def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tu
             bullets = [_strip_square_brackets(b) for b in bullets]
         jobs_with_bullets.append({**job, "description_bullets": bullets})
 
-    skills_by_name = _build_skills_by_name(skills_dict)
-    skills_by_category = _build_skills_by_category(categories_dict, skills_dict)
+    skills_by_name = _build_skills_by_name(model.skills)
+    skills_by_category = _build_skills_by_category(model.categories, model.skills)
 
-    contact = other.get("contact") or {}
-    title = other.get("title") or ""
-    summary = other.get("summary") or ""
+    contact = model.other_sections.get("contact") or {}
+    title = model.other_sections.get("title") or ""
+    summary = model.other_sections.get("summary") or ""
     if skip_square_brackets:
         summary = _strip_square_brackets(summary)
-    certifications = other.get("certifications") or []
-    websites = other.get("websites") or []
-    other_sections = other.get("custom_sections") or other.get("other_sections") or []
+    certifications = model.other_sections.get("certifications") or []
+    websites = model.other_sections.get("websites") or []
+    other_sections = model.other_sections.get("custom_sections") or model.other_sections.get("other_sections") or []
     if skip_square_brackets and other_sections:
         other_sections = [
             {**sec, "content": _strip_square_brackets(sec.get("content") or "")}
@@ -148,24 +167,34 @@ def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tu
         summary=summary,
         jobs=jobs_with_bullets,
         skills=skills_by_name,
-        categories=categories_dict,
+        categories=model.categories,
         skills_by_category=skills_by_category,
         certifications=certifications,
         websites=websites,
         other_sections=other_sections,
     )
 
-    input_dir.mkdir(parents=True, exist_ok=True)
-    resume_path = input_dir / "resume.html"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    resume_path = output_dir / "resume.html"
     resume_path.write_text(html, encoding="utf-8")
 
     template_src = TEMPLATES_DIR / "resume.html"
-    template_dest = input_dir / "resume_template.html"
+    template_dest = output_dir / "resume_template.html"
     if template_src.exists():
         import shutil
         shutil.copy2(template_src, template_dest)
 
     return resume_path, template_dest
+
+
+def render_resume_html(input_dir: Path, skip_square_brackets: bool = True) -> tuple[Path, Path]:
+    """
+    Read JSON files from input_dir, render HTML, write resume.html and resume_template.html.
+    If skip_square_brackets is True (default), remove [ and ] from job descriptions, summary, and other section content.
+    Returns (resume_path, template_copy_path).
+    """
+    model = load_resume_from_json(input_dir)
+    return render_resume_model(model, output_dir=input_dir, skip_square_brackets=skip_square_brackets)
 
 
 def main() -> int:

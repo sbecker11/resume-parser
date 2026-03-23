@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate resume.html from JSON files. Run separately after resume-to-flyer.
+Generate resume.html from JSON files. Run separately after resume-to-json.
 
 Usage:
   render-resume-html -i /path/to/output-folder
@@ -9,7 +9,7 @@ Usage:
 Reads jobs.json, skills.json, categories.json, other-sections.json from the input dir.
 Writes resume.html and resume_template.html to the same dir.
 
-Contract: see contracts/RENDER_RESUME_HTML-v1.0.md (used by resume-flyer to invoke the CLI).
+Contract: see contracts/RENDER_RESUME_HTML-v1.0.md (used by resume-consumer to invoke the CLI).
 """
 
 import argparse

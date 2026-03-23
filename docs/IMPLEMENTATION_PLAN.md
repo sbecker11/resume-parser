@@ -23,7 +23,7 @@
   - Copy template to `resume_template.html`
 - **Dependencies:** Jinja2, markupsafe; no resume parsing
 
-### 1.2 Remove HTML render from `resume_to_flyer.py` ✅
+### 1.2 Remove HTML render from `resume_to_json.py` ✅
 
 - Removed `_render_resume_html`, `_linkify`, `_template_dir`; HTML generation moved to `render_resume_html.py` (repo root)
 - Added optional `--render` flag to call render script after JSON writes
@@ -31,7 +31,7 @@
 ### 1.3 Update CLI / docs ✅
 
 - README: documented `python render_resume_html.py -i outputs-2` and `--render`
-- Optionally: `resume_to_flyer.py` can invoke `render_resume_html.py` after writing if desired
+- Optionally: `resume_to_json.py` can invoke `render_resume_html.py` after writing if desired
 
 ---
 
@@ -47,7 +47,7 @@
 
 ### 2.2 Add `apply_skill_merge` in skill_merge.py ✅
 
-- **Input:** in-memory skills (name-keyed), flyer_jobs, categories, source skill IDs/names, target skill ID/name
+- **Input:** in-memory skills (name-keyed), json_jobs, categories, source skill IDs/names, target skill ID/name
 - **Logic:**
   - Resolve sources and target to skillIDs (target may be new)
   - Merge jobIDs, categoryIDs, url, img from sources into target
@@ -56,7 +56,7 @@
   - Update each category's skillIDs: replace sources with target, dedupe
 - **Output:** Mutates skills, jobs, categories; returns None
 
-### 2.3 Add interactive approval loop in `resume_to_flyer.py` ✅
+### 2.3 Add interactive approval loop in `resume_to_json.py` ✅
 
 - After `assign_skill_ids`, before building `skills_by_id`; `run_merge_interactive` in skill_merge.py:
   - Call `suggest_skill_merges(skills)`
@@ -83,7 +83,7 @@
 ### 3.2 Pipeline order in main()
 
 1. Extract, parse jobs, parse sections
-2. Build flyer_jobs, skills (name-keyed), categories
+2. Build json_jobs, skills (name-keyed), categories
 3. assign_skill_ids(skills)
 4. **Skill merge** (suggest → approve → apply)
 5. Build jobs_by_id, skills_by_id (id-keyed for output)
@@ -128,7 +128,7 @@
 
 ```
 resume-parser/
-├── resume_to_flyer.py      # Parse + merge + write JSON (no HTML)
+├── resume_to_json.py      # Parse + merge + write JSON (no HTML)
 ├── scripts/
 │   ├── render_resume_html.py   # Read JSON → write resume.html (contract: contracts/RENDER_RESUME_HTML-v1.0.md)
 │   └── run_merge_on_parsed.py
@@ -150,6 +150,6 @@ resume-parser/
 ## Implementation order
 
 1. **Phase 1** - Extract HTML render to `render_resume_html.py` (repo root); remove from main pipeline; test.
-2. **Phase 2** - Add `skill_merge.py`; integrate merge step in `resume_to_flyer.py`; add `--no-merge`.
+2. **Phase 2** - Add `skill_merge.py`; integrate merge step in `resume_to_json.py`; add `--no-merge`.
 3. **Phase 3** - Confirm JSON writes stay lightweight (no code change if order is correct).
 4. **Tests** - Add unit and integration tests as each phase is completed.

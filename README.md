@@ -1,9 +1,9 @@
-# resume-parser (resume-to-flyer)
+# resume-parser (resume-to-json)
 
 Parse resumes (DOCX/PDF) into `jobs.json`, `skills.json`, `categories.json`, and `other-sections.json`.
 LLM-driven skill term merges with manual approval.
 
-## Installation (for consumers like resume-flyer)
+## Installation (for consumers like resume-consumer)
 
 Install the package so you get the CLI commands and the `resume_parser` Python API.
 
@@ -21,14 +21,14 @@ pip install resume-parser
 # or pin: resume-parser==1.0.0
 ```
 
-**In a consumer project (e.g. resume-flyer):**
+**In a consumer project (e.g. resume-consumer):**
 
 - **requirements.txt:**  
   `resume-parser @ git+https://github.com/sbecker11/resume-parser.git@v1.0.0`
 - **pyproject.toml:**  
   `dependencies = ["resume-parser @ git+https://github.com/sbecker11/resume-parser.git@v1.0.0"]`
 
-After install, **root-level CLIs** are on your PATH: `resume-to-flyer`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`. resume-flyer can invoke the renderer with `render-resume-html -i <folder>` (see [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md)).
+After install, **root-level CLIs** are on your PATH: `resume-to-json`, `resume-from-json`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume`. resume-consumer can invoke the renderer with `resume-from-json -i <folder>` (or `render-resume-html -i <folder>`) - see [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
 
 **Single source of truth for integration:** Schema, validator, and contract specs all live in **[contracts/](contracts/)** (see [contracts/README.md](contracts/README.md)). The package provides the CLIs only; contracts/ holds the documents consumers need.
 
@@ -56,26 +56,27 @@ When the package is installed, these commands are on your PATH. (Developers can 
 
 | Command | Purpose |
 |--------|--------|
-| **`resume-to-flyer`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
-| **`render-resume-html`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-flyer. |
+| **`resume-to-json`** | Parse a resume (DOCX/PDF) → write JSON (+ optional merge and HTML). |
+| **`resume-from-json`** | Load parsed JSON into an in-memory resume model, then render `resume.html`. |
+| **`render-resume-html`** | Generate `resume.html` from existing JSON in a folder. Contract: contracts/RENDER_RESUME_HTML-v1.0.md. Invoked by resume-consumer. |
 | **`run-merge-on-parsed`** | Run skill merge on an existing parsed folder (read/write JSON, optional `--render`). |
 | **`validate-parsed-resume`** | Validate a parsed-resume folder’s JSON against the schema. |
 
-See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps for all four.
+See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for manual smoke-test steps.
 
 ## Usage
 
 Provide the path to your resume file (DOCX or PDF); there is no project `resumes/` folder.
 
 ```bash
-resume-to-flyer /path/to/resume.docx -o /path/to/output-files
+resume-to-json /path/to/resume.docx -o /path/to/output-files
 ```
 
 ### Options
 
 | Option | Description |
 |-------|-------------|
-| `-o`, `--output-dir` | Where to write .json files (default: resume-flyer/static_content if found, else cwd) |
+| `-o`, `--output-dir` | Where to write .json files (default: resume-consumer/static_content if found, else cwd) |
 | `--id` | Resume id for meta.json (default: output dir basename) |
 | `--no-llm` | Skip LLM; only extract text (for testing) |
 | `--no-enrich` | Skip LLM skill URL enrichment |
@@ -93,10 +94,10 @@ All files are written in the output folder (no subfolders). The output folder al
 - **Jobs** dictionary uses **jobID** as primary key. Job item has display name (role, employer), optional list of `skillIDs`.
 - **Categories** dictionary uses **categoryID** as primary key. Category item has display name (`name`), optional list of `skillIDs`.
 
-- **jobs.json** - Jobs dict keyed by jobID (resume-flyer format). Each job has role, employer, start, end, Description, skillIDs, etc.
+- **jobs.json** - Jobs dict keyed by jobID (resume-consumer format). Each job has role, employer, start, end, Description, skillIDs, etc.
 - **skills.json** - Skills dict keyed by skillID (slug): `{ "skillID": { "name": "Display Name", "url": "", "img": "", "categoryIDs": ["id1", ...], "jobIDs": [0, 1, ...] }, ... }`. Same structure as jobs and categories (ID as key, display name inside). Includes skills from job descriptions (with job indices in `jobIDs`) plus any from the resume’s skills section (`jobIDs` empty). `categoryIDs` reference **categories.json** for display names.
-- **categories.json** - Categories dict keyed by categoryID (resume-flyer format). Each category has name, skillIDs.
-- **other-sections.json** - Contact, title, summary, certifications, websites, custom_sections, skills (resume-flyer format).
+- **categories.json** - Categories dict keyed by categoryID (resume-consumer format). Each category has name, skillIDs.
+- **other-sections.json** - Contact, title, summary, certifications, websites, custom_sections, skills (resume-consumer format).
 - **meta.json** - Resume metadata for list UI: id, displayName, createdAt, fileName, jobCount, skillCount.
 - **resume.html** - Rendered resume (generate with `render-resume-html -i /path/to/output` or `--render`).
 - **resume_template.html** - Copy of the template (written when generating resume.html).
@@ -118,7 +119,7 @@ Generate `resume.html` from the JSON files:
 render-resume-html -i /path/to/output-folder
 ```
 
-Or use `--render` with `resume-to-flyer` to run this step automatically after parsing. Contract for resume-flyer: [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
+Or use `--render` with `resume-to-json` to run this step automatically after parsing. Contract for resume-consumer: [contracts/RENDER_RESUME_HTML-v1.0.md](contracts/RENDER_RESUME_HTML-v1.0.md).
 
 ### Run merge on existing parsed folder
 
@@ -179,4 +180,4 @@ coverage html
 
 ## Flyer integration
 
-The generated output files can be read by `workspace-resume/resume-flyer`
+The generated output files can be read by `workspace-resume/resume-consumer`

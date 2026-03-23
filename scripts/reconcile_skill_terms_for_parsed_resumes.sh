@@ -3,9 +3,9 @@ set -euo pipefail
 
 # Inter-project housekeeping:
 # Apply the reconcile-only merged-term replacement pass to all parsed resumes
-# under the resume-flyer workspace.
+# under the resume-consumer workspace.
 
-PARSED_RESUMES_DIR="/Users/sbecker11/workspace-flyer/resume-flyer/parsed_resumes"
+PARSED_RESUMES_DIR="/Users/sbecker11/workspace-resume/resume-consumer/parsed_resumes"
 
 RENDER_FLAG=()
 if [[ "${1:-}" == "--render" ]]; then

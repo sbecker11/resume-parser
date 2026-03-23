@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-resume-to-flyer: Parse resume (DOCX/PDF) into flyer-of-postcards jobs.json, skills.json, categories.json, other-sections.json.
+resume-to-json: Parse resume (DOCX/PDF) into resume-consumer jobs.json, skills.json, categories.json, other-sections.json.
 
 Usage:
-  resume-to-flyer <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
-  # Or from repo: python resume_to_flyer.py ...
+  resume-to-json <resume.docx|resume.pdf> [--output-dir PATH] [--no-llm] [--no-enrich] [--render]
 
   --output-dir   Where to write .json files (and optional resume copy)
   --no-llm       Skip LLM calls; use extraction only (for testing)
@@ -24,15 +23,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load .env from script directory (reliable regardless of cwd)
-load_dotenv(Path(__file__).resolve().parent / ".env")
+# Load .env from cwd (consumer's project) or repo root when developing
+load_dotenv(Path.cwd() / ".env")
 
-# Add parent for imports
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from extractors import extract_text
-from skill_merge import run_merge_interactive
-from parsers import (
+from .extractors import extract_text
+from .skill_merge import run_merge_interactive
+from .parsers import (
     parse_jobs_with_llm,
     parse_resume_sections,
     extract_skills_from_text,
@@ -42,7 +38,7 @@ from parsers import (
     categorize_skills_with_llm,
     build_categories_dict,
     assign_skill_ids,
-    jobs_to_flyer_format,
+    jobs_to_json_format,
     get_llm_provider,
 )
 
@@ -51,13 +47,13 @@ _DEGREE_RE = re.compile(r"\b(b\.?\s?s\.?|bachelor|m\.?\s?s\.?|master|ph\.?\s?d\.
 
 
 def _default_output_dir() -> Path:
-    """Default output: flyer-of-postcards/static_content if it exists nearby."""
-    tool_dir = Path(__file__).resolve().parent
-    # Check workspace-resume, workspace-flyer, or cwd
+    """Default output: resume-consumer/static_content if it exists nearby."""
+    tool_dir = Path(__file__).resolve().parent  # package dir when installed
+    # Check workspace-resume, workspace-resume, or cwd
     candidates = [
-        Path.home() / "workspace-flyer" / "flyer-of-postcards" / "static_content",
-        tool_dir.parent.parent / "flyer-of-postcards" / "static_content",
-        tool_dir.parent / "flyer-of-postcards" / "static_content",
+        Path.home() / "workspace-resume" / "resume-consumer" / "static_content",
+        tool_dir.parent.parent / "resume-consumer" / "static_content",
+        tool_dir.parent / "resume-consumer" / "static_content",
         Path.cwd() / "static_content",
     ]
     for c in candidates:
@@ -67,7 +63,7 @@ def _default_output_dir() -> Path:
 
 
 def _write_json(path: Path, data: dict | list, out_dir: Path) -> Path:
-    """Write data as UTF-8 JSON (resume-flyer format)."""
+    """Write data as UTF-8 JSON (resume-consumer format)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -75,17 +71,17 @@ def _write_json(path: Path, data: dict | list, out_dir: Path) -> Path:
 
 
 def _write_jobs_json(jobs: dict[str, dict], out_dir: Path) -> Path:
-    """Write jobs dict keyed by jobID (resume-flyer format)."""
+    """Write jobs dict keyed by jobID (resume-consumer format)."""
     return _write_json(out_dir / "jobs.json", jobs, out_dir)
 
 
 def _write_skills_json(skills_by_id: dict[str, dict], out_dir: Path) -> Path:
-    """Write skills dict keyed by skillID (resume-flyer format)."""
+    """Write skills dict keyed by skillID (resume-consumer format)."""
     return _write_json(out_dir / "skills.json", skills_by_id, out_dir)
 
 
 def _write_categories_json(categories: dict[str, dict], out_dir: Path) -> Path:
-    """Write categories dict (resume-flyer format)."""
+    """Write categories dict (resume-consumer format)."""
     return _write_json(out_dir / "categories.json", categories, out_dir)
 
 
@@ -113,8 +109,8 @@ def _split_jobs_and_education(items: list[dict]) -> tuple[list[dict], list[dict]
     return jobs, education
 
 
-def _build_other_sections_for_flyer(resume_meta: dict) -> dict:
-    """Transform parser meta to resume-flyer otherSections schema."""
+def _build_other_sections_for_json(resume_meta: dict) -> dict:
+    """Transform parser meta to resume-consumer otherSections schema."""
     contact = resume_meta.get("contact") or {}
     title = (resume_meta.get("title") or "").strip()
     summary = (resume_meta.get("summary") or "").strip()
@@ -147,8 +143,8 @@ def _build_other_sections_for_flyer(resume_meta: dict) -> dict:
 
 
 def _write_other_sections_json(resume_meta: dict, out_dir: Path) -> Path:
-    """Write other-sections.json in resume-flyer schema."""
-    other = _build_other_sections_for_flyer(resume_meta)
+    """Write other-sections.json in resume-consumer schema."""
+    other = _build_other_sections_for_json(resume_meta)
     return _write_json(out_dir / "other-sections.json", other, out_dir)
 
 
@@ -160,7 +156,7 @@ def _write_meta_json(
     job_count: int,
     skill_count: int,
 ) -> Path:
-    """Write meta.json for resume-flyer list UI."""
+    """Write meta.json for resume-consumer list UI."""
     from datetime import datetime, timezone
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = {
@@ -178,13 +174,13 @@ def _write_meta_json(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Parse resume into flyer-of-postcards data")
+    parser = argparse.ArgumentParser(description="Parse resume into resume-consumer data")
     parser.add_argument("resume", type=Path, help="Path to resume.docx or resume.pdf")
     parser.add_argument(
         "-o", "--output-dir",
         type=Path,
         default=None,
-        help="Output directory (default: flyer-of-postcards/static_content or cwd)",
+        help="Output directory (default: resume-consumer/static_content or cwd)",
     )
     parser.add_argument(
         "--id",
@@ -216,7 +212,7 @@ def main() -> int:
     parser.add_argument(
         "--render",
         action="store_true",
-        help="After writing .json, run render_resume_html.py to generate resume.html",
+        help="After writing .json, run render-resume-html to generate resume.html",
     )
     args = parser.parse_args()
 
@@ -284,8 +280,8 @@ def main() -> int:
     for job in jobs:
         job["description"] = expand_parens_in_text((job.get("description") or "").strip())
 
-    # Convert to flyer format
-    flyer_jobs = jobs_to_flyer_format(jobs)
+    # Convert to JSON format
+    json_jobs = jobs_to_json_format(jobs)
     education_by_id: dict[str, dict] = {}
     for i, edu in enumerate(education_entries):
         degree = (edu.get("role") or "").strip()
@@ -301,7 +297,7 @@ def main() -> int:
 
     # Phase 3: Extract skills per job so we can assign jobIDs
     skills: dict = {}
-    for i, job in enumerate(flyer_jobs):
+    for i, job in enumerate(json_jobs):
         desc = (job.get("Description") or "").strip()
         job_skills = extract_skills_from_text(desc)
         for name, data in job_skills.items():
@@ -334,9 +330,9 @@ def main() -> int:
 
     if not args.no_merge and len(skills) >= 2:
         print("Suggesting skill merges...")
-        replacements = run_merge_interactive(skills, flyer_jobs, categories)
+        replacements = run_merge_interactive(skills, json_jobs, categories)
         for source_names, target_name in replacements:
-            for job in flyer_jobs:
+            for job in json_jobs:
                 desc = job.get("Description") or ""
                 for sn in source_names:
                     desc = desc.replace(sn, target_name)
@@ -351,13 +347,13 @@ def main() -> int:
         ]
 
     # Each job gets optional skillIDs (skill ids for skills that appear in that job)
-    for job in flyer_jobs:
+    for job in json_jobs:
         job["skillIDs"] = [
             data["id"]
             for name, data in skills.items()
             if job["index"] in data.get("jobIDs", [])
         ]
-    jobs_by_id: dict[str, dict] = {str(job["index"]): job for job in flyer_jobs}
+    jobs_by_id: dict[str, dict] = {str(job["index"]): job for job in json_jobs}
     # Skills output keyed by skillID (slug), with "name" as display name; matches jobs/categories structure
     skills_by_id: dict[str, dict] = {
         data["id"]: {
@@ -401,7 +397,7 @@ def main() -> int:
     print(f"Wrote {other_path}")
     print(f"Wrote {meta_path}")
     if args.render:
-        from render_resume_html import render_resume_html
+        from .render_resume_html import render_resume_html
         resume_path, template_path = render_resume_html(out_dir)
         print(f"Wrote {resume_path}")
         print(f"Wrote {template_path}")

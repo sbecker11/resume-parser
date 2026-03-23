@@ -19,7 +19,7 @@ resume-parser/
       extractors.py        # (move from root)
       parsers.py           # (move from root)
       skill_merge.py       # (move from root)
-      resume_to_flyer.py   # (move from root) — or keep as CLI-only entry
+      resume_to_json.py   # (move from root) — or keep as CLI-only entry
       render_resume_html.py
       run_merge_on_parsed.py  # (move from scripts/)
       contracts/           # package data (see below)
@@ -43,7 +43,7 @@ resume-parser/
 | Item | Location in repo (current) | In package |
 |------|----------------------------|------------|
 | Core logic | extractors.py, parsers.py, skill_merge.py | `src/resume_parser/*.py` |
-| Main CLI | resume_to_flyer.py | `resume_parser.resume_to_flyer` + entry point |
+| Main CLI | resume_to_json.py | `resume_parser.resume_to_json` + entry point |
 | HTML render | render_resume_html.py | `resume_parser.render_resume_html` + entry point |
 | Merge script | scripts/run_merge_on_parsed.py | `resume_parser.run_merge_on_parsed` + entry point |
 | Validator | contracts/validate_parsed_resume.py | `resume_parser.contracts.validate_parsed_resume` + entry point |
@@ -65,7 +65,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "resume-parser"
 version = "1.0.0"
-description = "Parse resume documents (DOCX/PDF) into flyer-of-postcards JSON and HTML"
+description = "Parse resume documents (DOCX/PDF) into resume-output JSON and HTML"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -87,7 +87,7 @@ dev = [
 ]
 
 [project.scripts]
-resume-to-flyer = "resume_parser.resume_to_flyer:main"
+resume-to-json = "resume_parser.resume_to_json:main"
 render-resume-html = "resume_parser.render_resume_html:main"
 run-merge-on-parsed = "resume_parser.run_merge_on_parsed:main"
 validate-parsed-resume = "resume_parser.contracts.validate_parsed_resume:main"
@@ -129,12 +129,12 @@ resume_parser = [
 ## 6. Implementation steps (ordered)
 
 1. **Create `src/resume_parser/`** and add `__init__.py` with `__version__ = "1.0.0"`.
-2. **Move modules** from root into `src/resume_parser/`: extractors, parsers, skill_merge, resume_to_flyer, render_resume_html. Move `scripts/run_merge_on_parsed.py` into `src/resume_parser/`. Adjust internal imports (e.g. `from extractors` → `from resume_parser.extractors` or relative).
+2. **Move modules** from root into `src/resume_parser/`: extractors, parsers, skill_merge, resume_to_json, render_resume_html. Move `scripts/run_merge_on_parsed.py` into `src/resume_parser/`. Adjust internal imports (e.g. `from extractors` → `from resume_parser.extractors` or relative).
 3. **Copy contracts and templates** into `src/resume_parser/`: create `src/resume_parser/contracts/` (validator, schema, .md, requirements.txt) and `src/resume_parser/templates/` (resume.html). Update validator’s schema path to the same directory.
-4. **Fix imports** in all moved modules (resume_to_flyer, render_resume_html, run_merge_on_parsed, validate_parsed_resume) so they work when run as part of `resume_parser` (no `sys.path.insert` for repo root).
+4. **Fix imports** in all moved modules (resume_to_json, render_resume_html, run_merge_on_parsed, validate_parsed_resume) so they work when run as part of `resume_parser` (no `sys.path.insert` for repo root).
 5. **Add `pyproject.toml`** at repo root with the content above; set `version` and entry points. Add `[tool.setuptools.package-data]` so contracts and templates are included.
 6. **Ensure each CLI has a `main()`** that returns an int (or calls `sys.exit`). Entry points will call `main()`.
-7. **Test local install:** From repo root, `pip install -e .` then run `resume-to-flyer --help`, `render-resume-html --help`, `validate-parsed-resume --help`, `run-merge-on-parsed --help`. Run existing tests (adjust test imports to use `resume_parser`).
+7. **Test local install:** From repo root, `pip install -e .` then run `resume-to-json --help`, `render-resume-html --help`, `validate-parsed-resume --help`, `run-merge-on-parsed --help`. Run existing tests (adjust test imports to use `resume_parser`).
 8. **Optional:** Add `setuptools-scm` and use git tags for version (e.g. `git tag 1.0.0` then build).
 9. **Build and publish:** `python -m build` → upload to PyPI (or private index). Consumer then uses `resume-parser==1.0.0` in requirements.txt.
 
@@ -149,7 +149,7 @@ resume-parser==1.0.0
 
 ```bash
 pip install -r requirements.txt
-resume-to-flyer path/to/resume.docx -o ./out
+resume-to-json path/to/resume.docx -o ./out
 render-resume-html -i ./out
 validate-parsed-resume ./out
 run-merge-on-parsed ./out --render

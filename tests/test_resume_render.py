@@ -4,7 +4,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from resume_parser.render_resume_html import render_resume_html, _load_json
+from resume_parser.render_resume_html import (
+    _load_json,
+    load_resume_from_json,
+    render_resume_html,
+    render_resume_model,
+)
 
 
 class TestRenderResumeHtml(unittest.TestCase):
@@ -56,6 +61,24 @@ class TestRenderResumeHtml(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 render_resume_html(out_dir)
 
+    def test_load_then_render_from_in_memory_model(self):
+        with tempfile.TemporaryDirectory() as d:
+            out_dir = Path(d)
+            jobs = {"0": {"index": 0, "role": "Engineer", "employer": "Acme", "Description": "Built [Python] tools.", "skillIDs": []}}
+            skills = {"python": {"name": "Python", "url": "https://python.org", "img": "", "categoryIDs": ["programming-language"], "jobIDs": [0]}}
+            categories = {"programming-language": {"name": "Programming Language", "skillIDs": ["python"]}}
+            other = {"contact": {"name": "Jane Doe"}, "title": "Data Engineer", "summary": "Worked with [Python].", "certifications": [], "skills": [], "other_sections": []}
+            self._write_json_files(out_dir, jobs, skills, categories, other)
+
+            model = load_resume_from_json(out_dir)
+            self.assertEqual(model.jobs["0"]["employer"], "Acme")
+
+            resume_path, _ = render_resume_model(model, output_dir=out_dir)
+            html = resume_path.read_text(encoding="utf-8")
+            self.assertIn("Jane Doe", html)
+            self.assertIn("Python", html)
+            self.assertNotIn("[Python]", html)
+
     def _write_json_files(self, out_dir: Path, jobs: dict, skills: dict, categories: dict, other: dict):
         (out_dir / "jobs.json").write_text(json.dumps(jobs), encoding="utf-8")
         (out_dir / "skills.json").write_text(json.dumps(skills), encoding="utf-8")
@@ -103,7 +126,7 @@ class TestRenderResumeHtml(unittest.TestCase):
             html = resume_path.read_text()
             self.assertIn('href="https://example.com"', html)
 
-    def test_render_with_resume_flyer_format(self):
+    def test_render_with_resume_consumer_format(self):
         """render_resume_html handles PARSED-RESUME-FORMAT: custom_sections, websites, certifications {name,url,description}."""
         jobs = {"0": {"index": 0, "role": "R", "employer": "E", "Description": "", "skillIDs": []}}
         skills = {}

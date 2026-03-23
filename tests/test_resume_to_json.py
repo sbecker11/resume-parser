@@ -1,11 +1,11 @@
-"""Tests for resume_parser.resume_to_flyer to achieve >= 80% coverage."""
+"""Tests for resume_parser.resume_to_json to achieve >= 80% coverage."""
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from resume_parser.resume_to_flyer import (
+from resume_parser.resume_to_json import (
     _default_output_dir,
     _write_jobs_json,
     _write_education_json,
@@ -94,7 +94,7 @@ class TestWriters(unittest.TestCase):
             data = json.loads(path.read_text())
             self.assertIn("contact", data)
 
-    def test_other_sections_resume_flyer_schema(self):
+    def test_other_sections_resume_consumer_schema(self):
         """other-sections.json output matches PARSED-RESUME-FORMAT: certifications {name,url,description}, websites, custom_sections."""
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
@@ -144,7 +144,7 @@ class TestWriters(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def test_file_not_found_returns_1(self):
-        with patch("sys.argv", ["resume-to-flyer", "/nonexistent/resume.docx"]):
+        with patch("sys.argv", ["resume-to-json", "/nonexistent/resume.docx"]):
             result = main()
             self.assertEqual(result, 1)
 
@@ -153,8 +153,8 @@ class TestMain(unittest.TestCase):
             f.write(b"dummy")
             resume_path = f.name
         try:
-            with patch("resume_parser.resume_to_flyer.extract_text", return_value="Sample resume text here."):
-                with patch("sys.argv", ["resume-to-flyer", resume_path, "--no-llm"]):
+            with patch("resume_parser.resume_to_json.extract_text", return_value="Sample resume text here."):
+                with patch("sys.argv", ["resume-to-json", resume_path, "--no-llm"]):
                     with patch("builtins.print"):
                         result = main()
             self.assertEqual(result, 0)
@@ -184,13 +184,13 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [], "categories": ["Programming Language"]},
                 }
 
-                with patch("resume_parser.resume_to_flyer.extract_text", return_value="Resume text"):
-                    with patch("resume_parser.resume_to_flyer.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_parser.resume_to_flyer.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_parser.resume_to_flyer.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_parser.resume_to_flyer.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_parser.resume_to_flyer.categorize_skills_with_llm", return_value=skills_with_cats):
-                                        with patch("sys.argv", ["resume-to-flyer", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
+                with patch("resume_parser.resume_to_json.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_json.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_json.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_json.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_json.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_json.categorize_skills_with_llm", return_value=skills_with_cats):
+                                        with patch("sys.argv", ["resume-to-json", resume_path, "-o", str(out_dir), "--no-merge", "--render"]):
                                             with patch("builtins.print"):
                                                 result = main()
                 self.assertEqual(result, 0)
@@ -228,15 +228,15 @@ class TestMain(unittest.TestCase):
                     "Python": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                     "Java": {"url": "", "img": "", "jobIDs": [0], "categories": ["Programming"]},
                 }
-                with patch("resume_parser.resume_to_flyer.extract_text", return_value="Resume text"):
-                    with patch("resume_parser.resume_to_flyer.get_llm_provider", return_value="anthropic"):
-                        with patch("resume_parser.resume_to_flyer.parse_jobs_with_llm", return_value=jobs_data):
-                            with patch("resume_parser.resume_to_flyer.parse_resume_sections", return_value=resume_meta):
-                                with patch("resume_parser.resume_to_flyer.enrich_skills_with_llm", side_effect=lambda s: s):
-                                    with patch("resume_parser.resume_to_flyer.categorize_skills_with_llm", return_value=skills_with_cats):
+                with patch("resume_parser.resume_to_json.extract_text", return_value="Resume text"):
+                    with patch("resume_parser.resume_to_json.get_llm_provider", return_value="anthropic"):
+                        with patch("resume_parser.resume_to_json.parse_jobs_with_llm", return_value=jobs_data):
+                            with patch("resume_parser.resume_to_json.parse_resume_sections", return_value=resume_meta):
+                                with patch("resume_parser.resume_to_json.enrich_skills_with_llm", side_effect=lambda s: s):
+                                    with patch("resume_parser.resume_to_json.categorize_skills_with_llm", return_value=skills_with_cats):
                                         merge_mock = MagicMock()
-                                        with patch("resume_parser.resume_to_flyer.run_merge_interactive", merge_mock):
-                                            with patch("sys.argv", ["resume-to-flyer", resume_path, "-o", str(out_dir), "--no-merge"]):
+                                        with patch("resume_parser.resume_to_json.run_merge_interactive", merge_mock):
+                                            with patch("sys.argv", ["resume-to-json", resume_path, "-o", str(out_dir), "--no-merge"]):
                                                 with patch("builtins.print"):
                                                     result = main()
                 self.assertEqual(result, 0)

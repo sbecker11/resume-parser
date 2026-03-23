@@ -1,6 +1,6 @@
 # Manual Smoke Test: resume-parser
 
-Covers all four CLI utilities: `resume-to-flyer`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume` (install the package first: `pip install -e .`).
+Covers CLI utilities: `resume-to-json`, `resume-from-json`, `render-resume-html`, `run-merge-on-parsed`, `validate-parsed-resume` (install the package first: `pip install -e .`).
 
 ## Prerequisites
 
@@ -11,10 +11,10 @@ Covers all four CLI utilities: `resume-to-flyer`, `render-resume-html`, `run-mer
 
 ---
 
-## 1. Full pipeline (parse → JSON) — `resume-to-flyer`
+## 1. Full pipeline (parse → JSON) — `resume-to-json`
 
 ```bash
-resume-to-flyer tests/test-resume.docx -o /tmp/resume-output
+resume-to-json tests/test-resume.docx -o /tmp/resume-output
 ```
 
 - [ ] Exits without errors
@@ -23,10 +23,10 @@ resume-to-flyer tests/test-resume.docx -o /tmp/resume-output
 
 ---
 
-## 2. Full pipeline with `--no-merge` (non-interactive) — `resume-to-flyer`
+## 2. Full pipeline with `--no-merge` (non-interactive) — `resume-to-json`
 
 ```bash
-resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge
+resume-to-json tests/test-resume.docx -o /tmp/resume-output --no-merge
 ```
 
 - [ ] Runs without prompts
@@ -34,10 +34,10 @@ resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge
 
 ---
 
-## 3. Full pipeline with HTML render — `resume-to-flyer`
+## 3. Full pipeline with HTML render — `resume-to-json`
 
 ```bash
-resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge --render
+resume-to-json tests/test-resume.docx -o /tmp/resume-output --no-merge --render
 ```
 
 - [ ] `resume.html` and `resume_template.html` exist
@@ -45,10 +45,10 @@ resume-to-flyer tests/test-resume.docx -o /tmp/resume-output --no-merge --render
 
 ---
 
-## 4. Skill merge (interactive) — `resume-to-flyer`
+## 4. Skill merge (interactive) — `resume-to-json`
 
 ```bash
-resume-to-flyer tests/test-resume.docx -o /tmp/resume-output
+resume-to-json tests/test-resume.docx -o /tmp/resume-output
 ```
 
 (Use a resume with multiple skills; skip `--no-merge` for this step.)
@@ -74,7 +74,20 @@ render-resume-html -i /tmp/resume-output
 
 ---
 
-## 6. Run merge on existing parsed folder — `run-merge-on-parsed`
+## 6. Load-from-JSON then render - `resume-from-json`
+
+```bash
+# Ensure output folder has .json files from step 1, 2, or 3
+resume-from-json -i /tmp/resume-output
+```
+
+- [ ] Exits without errors
+- [ ] `resume.html` and `resume_template.html` updated
+- [ ] HTML content is consistent with JSON data
+
+---
+
+## 7. Run merge on existing parsed folder — `run-merge-on-parsed`
 
 `run-merge-on-parsed` reads `jobs.json`, `skills.json`, and `categories.json` from a parsed folder, runs the LLM skill-merge step (interactive or `--accept-all`), writes back updated JSON and job descriptions, and optionally re-renders HTML.
 
@@ -107,10 +120,10 @@ validate-parsed-resume /tmp/resume-output
 
 ---
 
-## 8. Text extraction only — `resume-to-flyer`
+## 8. Text extraction only — `resume-to-json`
 
 ```bash
-resume-to-flyer tests/test-resume.docx --no-llm
+resume-to-json tests/test-resume.docx --no-llm
 ```
 
 - [ ] Prints first ~500 characters of extracted text

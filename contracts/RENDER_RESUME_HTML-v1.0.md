@@ -1,8 +1,8 @@
 # render_resume_html — Standalone HTML Generator
 
-Generate `resume.html` from existing JSON files. Use when you have a resume folder (e.g. from `resume-to-flyer`) and want to produce or refresh the HTML output without re-parsing.
+Generate `resume.html` from existing JSON files. Use when you have a resume folder (e.g. from `resume-to-json`) and want to produce or refresh the HTML output without re-parsing.
 
-**Contract:** Owned and maintained by resume-parser; consumers (e.g. resume-flyer) implement against this specification.
+**Contract:** Owned and maintained by resume-parser; consumers implement against this specification.
 
 **Version:** 1.0
 
@@ -13,7 +13,7 @@ Generate `resume.html` from existing JSON files. Use when you have a resume fold
 
 ## Invocation
 
-Run from the resume-parser repo root (resume-flyer invokes this path):
+Run from the resume-parser repo root (resume-consumer invokes this path):
 
 ```bash
 render-resume-html -i <path-to-resume-folder>
@@ -55,7 +55,7 @@ render-resume-html -i ./parsed_resumes/shawn-becker --show-brackets
 
 ## Integration
 
-- **With resume-to-flyer**: Pass `--render` to run the renderer after parsing
+- **With resume-to-json**: Pass `--render` to run the renderer after parsing
 - **Without parsing**: Run this script directly on any folder that already has the four JSON files
 
 ## Revision history
