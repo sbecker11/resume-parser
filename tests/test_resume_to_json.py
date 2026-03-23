@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 
 from resume_parser.resume_to_json import (
     _default_output_dir,
+    _split_jobs_and_education,
     _write_jobs_json,
     _write_education_json,
     _write_skills_json,
@@ -243,6 +244,22 @@ class TestMain(unittest.TestCase):
                 merge_mock.assert_not_called()
         finally:
             Path(resume_path).unlink(missing_ok=True)
+
+
+class TestEducationSplitRules(unittest.TestCase):
+    def test_non_degree_university_roles_stay_in_jobs(self):
+        items = [
+            {"role": "Resident Assistant", "employer": "University of Example", "description": ""},
+            {"role": "Vice President", "employer": "Example College", "description": ""},
+            {"role": "President", "employer": "School of Business", "description": ""},
+            {"role": "Economics Tutor", "employer": "University of Example", "description": ""},
+            {"role": "Research Assistant", "employer": "Institute of Science", "description": ""},
+            {"role": "B.S. Computer Science", "employer": "University of Example", "description": ""},
+        ]
+        jobs, education = _split_jobs_and_education(items)
+        self.assertEqual(len(jobs), 5)
+        self.assertEqual(len(education), 1)
+        self.assertEqual(education[0]["role"], "B.S. Computer Science")
 
 
 if __name__ == "__main__":

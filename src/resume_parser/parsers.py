@@ -8,6 +8,7 @@ import os
 import re
 from typing import Any
 
+from .education_rules import has_legitimate_degree, is_non_degree_role
 
 # Pattern: [text]{img}(url) where img and url are optional
 # Matches: [SkillName], [SkillName](url), [SkillName]{img}(url)
@@ -27,7 +28,16 @@ _SCHOOL_RE = re.compile(
     re.IGNORECASE,
 )
 _DEGREE_RE = re.compile(
-    r"\b(b\.?\s?s\.?|bachelor|m\.?\s?s\.?|master|ph\.?\s?d\.?|doctorate|mba|associate)\b",
+    r"\b("
+    r"a\.?\s?a\.?|associate|"
+    r"b\.?\s?a\.?|b\.?\s?s\.?|bachelor|"
+    r"m\.?\s?a\.?|m\.?\s?s\.?|master|mba|"
+    r"ph\.?\s?d\.?|doctorate|"
+    r"j\.?\s?d\.?|juris\s+doctor|"
+    r"m\.?\s?d\.?|doctor\s+of\s+medicine|"
+    r"d\.?\s?d\.?\s?s\.?|d\.?\s?v\.?\s?m\.?|d\.?\s?p\.?\s?t\.?|"
+    r"b\.?\s?eng\.?|m\.?\s?eng\.?|b\.?\s?tech\.?|m\.?\s?tech\.?"
+    r")\b",
     re.IGNORECASE,
 )
 _YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
@@ -178,8 +188,11 @@ def _parse_llm_json(text: str) -> dict[str, Any]:
 def _looks_like_education_job(job: dict[str, Any]) -> bool:
     role = str(job.get("role") or "")
     employer = str(job.get("employer") or "")
-    hay = f"{role} {employer}"
-    return bool(_SCHOOL_RE.search(hay) or _DEGREE_RE.search(hay))
+    if not has_legitimate_degree(role):
+        return False
+    if is_non_degree_role(role):
+        return False
+    return bool(_SCHOOL_RE.search(employer) or _SCHOOL_RE.search(role))
 
 
 def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
@@ -225,7 +238,6 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
 
         for chunk in chunks:
             school = ""
-            role = "Education"
             for ln in chunk:
                 if _SCHOOL_RE.search(ln):
                     school = ln
@@ -233,9 +245,16 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
             if not school:
                 continue
 
+            # First attempt: treat as education only if we find a legitimate degree term.
+            degree = ""
             for ln in chunk:
-                if ln != school and _DEGREE_RE.search(ln):
-                    role = ln
+                if ln == school:
+                    continue
+                # Avoid classifying employment roles at universities as "education".
+                if is_non_degree_role(ln):
+                    continue
+                if has_legitimate_degree(ln):
+                    degree = ln
                     break
 
             # _YEAR_RE has a capturing group; recover full years using finditer.
@@ -245,19 +264,51 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
             start = f"{start_year}-01-01" if start_year else ""
             end = f"{end_year}-12-31" if end_year else ""
 
-            desc_lines = [ln for ln in chunk if ln not in {school, role}]
-            description = " • ".join(desc_lines) if desc_lines else ""
-            out.append(
-                {
-                    "role": role,
-                    "employer": school,
-                    "start": start,
-                    "end": end,
-                    "employer_city": None,
-                    "employer_website": None,
-                    "description": description,
-                }
-            )
+            # Fallback: if no legitimate degree term exists, treat this as a job-like entry.
+            # This keeps employment roles (e.g. "Resident Assistant") from incorrectly landing in education.json.
+            if degree:
+                desc_lines = [ln for ln in chunk if ln not in {school, degree}]
+                description = " • ".join(desc_lines) if desc_lines else ""
+                out.append(
+                    {
+                        "role": degree,
+                        "employer": school,
+                        "start": start,
+                        "end": end,
+                        "employer_city": None,
+                        "employer_website": None,
+                        "description": description,
+                    }
+                )
+            else:
+                job_role = ""
+                for ln in chunk:
+                    if ln == school:
+                        continue
+                    if ln.strip().lower() == "education":
+                        continue
+                    if _YEAR_RE.search(ln):
+                        continue
+                    if has_legitimate_degree(ln):
+                        continue
+                    job_role = ln
+                    break
+                if not job_role:
+                    continue
+
+                desc_lines = [ln for ln in chunk if ln not in {school, job_role}]
+                description = " • ".join(desc_lines) if desc_lines else ""
+                out.append(
+                    {
+                        "role": job_role,
+                        "employer": school,
+                        "start": start,
+                        "end": end,
+                        "employer_city": None,
+                        "employer_website": None,
+                        "description": description,
+                    }
+                )
     return out
 
 
@@ -273,8 +324,8 @@ Output valid JSON only, no markdown or explanation. Use this exact schema:
     {
       "role": "string (job title)",
       "employer": "string (company/organization)",
-      "start": "YYYY-MM-DD (use first day of month if only month/year given)",
-      "end": "YYYY-MM-DD or CURRENT_DATE for present/current roles",
+      "start": "date string (acceptable formats include year only, month year, year-month, or full date)",
+      "end": "date string or CURRENT_DATE for present/current roles",
       "employer_city": "string or null",
       "employer_website": "string or null",
       "description": "string with bullet points (•) for each achievement."
@@ -283,7 +334,8 @@ Output valid JSON only, no markdown or explanation. Use this exact schema:
 }
 Rules:
 - One job per experience block
-- Normalize dates: "Aug 2024" -> "2024-08-01", "Present" -> "CURRENT_DATE"
+- Date formats are flexible: keep available precision from the resume (year-only, month-year, year-month, or full date are all acceptable)
+- Use "CURRENT_DATE" for present/current roles
 - Use • as bullet delimiter
 - IMPORTANT: Wrap every technology, framework, tool, and skill in [SkillName] brackets. Examples:
   "Python and Pandas" -> "[Python] and [Pandas]"

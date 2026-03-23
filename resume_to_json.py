@@ -47,7 +47,29 @@ from parsers import (
 )
 
 _SCHOOL_RE = re.compile(r"\b(university|college|institute|school|academy|polytechnic)\b", re.IGNORECASE)
-_DEGREE_RE = re.compile(r"\b(b\.?\s?s\.?|bachelor|m\.?\s?s\.?|master|ph\.?\s?d\.?|doctorate|mba|associate)\b", re.IGNORECASE)
+_DEGREE_RE = re.compile(
+    r"\b("
+    r"a\.?\s?a\.?|associate|"
+    r"b\.?\s?a\.?|b\.?\s?s\.?|bachelor|"
+    r"m\.?\s?a\.?|m\.?\s?s\.?|master|mba|"
+    r"ph\.?\s?d\.?|doctorate|"
+    r"j\.?\s?d\.?|juris\s+doctor|"
+    r"m\.?\s?d\.?|doctor\s+of\s+medicine|"
+    r"d\.?\s?d\.?\s?s\.?|d\.?\s?v\.?\s?m\.?|d\.?\s?p\.?\s?t\.?|"
+    r"b\.?\s?eng\.?|m\.?\s?eng\.?|b\.?\s?tech\.?|m\.?\s?tech\.?"
+    r")\b",
+    re.IGNORECASE,
+)
+_NON_DEGREE_ROLE_RE = re.compile(
+    r"\b("
+    r"resident\s+assistant|"
+    r"vice\s+president|"
+    r"president|"
+    r"economics\s+tutor|"
+    r"research\s+assistant"
+    r")\b",
+    re.IGNORECASE,
+)
 
 
 def _default_output_dir() -> Path:
@@ -97,8 +119,11 @@ def _write_education_json(education_by_id: dict[str, dict], out_dir: Path) -> Pa
 def _looks_like_education_entry(item: dict) -> bool:
     role = str(item.get("role") or "")
     employer = str(item.get("employer") or "")
-    hay = f"{role} {employer}"
-    return bool(_SCHOOL_RE.search(hay) or _DEGREE_RE.search(hay))
+    if not _DEGREE_RE.search(role):
+        return False
+    if _NON_DEGREE_ROLE_RE.search(role):
+        return False
+    return bool(_SCHOOL_RE.search(employer) or _SCHOOL_RE.search(role))
 
 
 def _split_jobs_and_education(items: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -381,8 +406,14 @@ def main() -> int:
     # education.json is optional and only written when education entries exist.
     jobs_path = _write_jobs_json(jobs_by_id, out_dir)
     education_path = None
+    # If a previous run wrote education.json, ensure we don't leave stale/invalid entries
+    # when the new parse contains no education items.
+    education_file = out_dir / "education.json"
     if education_by_id:
         education_path = _write_education_json(education_by_id, out_dir)
+    else:
+        if education_file.exists():
+            education_file.unlink()
     skills_path = _write_skills_json(skills_by_id, out_dir)
     categories_path = _write_categories_json(categories, out_dir)
     other_path = _write_other_sections_json(resume_meta, out_dir)

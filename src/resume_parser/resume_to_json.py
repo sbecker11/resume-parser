@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 # Load .env from cwd (consumer's project) or repo root when developing
 load_dotenv(Path.cwd() / ".env")
 
+from .education_rules import has_legitimate_degree, is_non_degree_role
 from .extractors import extract_text
 from .skill_merge import run_merge_interactive
 from .parsers import (
@@ -43,7 +44,6 @@ from .parsers import (
 )
 
 _SCHOOL_RE = re.compile(r"\b(university|college|institute|school|academy|polytechnic)\b", re.IGNORECASE)
-_DEGREE_RE = re.compile(r"\b(b\.?\s?s\.?|bachelor|m\.?\s?s\.?|master|ph\.?\s?d\.?|doctorate|mba|associate)\b", re.IGNORECASE)
 
 
 def _default_output_dir() -> Path:
@@ -93,8 +93,11 @@ def _write_education_json(education_by_id: dict[str, dict], out_dir: Path) -> Pa
 def _looks_like_education_entry(item: dict) -> bool:
     role = str(item.get("role") or "")
     employer = str(item.get("employer") or "")
-    hay = f"{role} {employer}"
-    return bool(_SCHOOL_RE.search(hay) or _DEGREE_RE.search(hay))
+    if not has_legitimate_degree(role):
+        return False
+    if is_non_degree_role(role):
+        return False
+    return bool(_SCHOOL_RE.search(employer) or _SCHOOL_RE.search(role))
 
 
 def _split_jobs_and_education(items: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -377,8 +380,14 @@ def main() -> int:
     # education.json is optional and only written when education entries exist.
     jobs_path = _write_jobs_json(jobs_by_id, out_dir)
     education_path = None
+    # If a previous run wrote education.json, ensure we don't leave stale/invalid entries
+    # when the new parse contains no education items.
+    education_file = out_dir / "education.json"
     if education_by_id:
         education_path = _write_education_json(education_by_id, out_dir)
+    else:
+        if education_file.exists():
+            education_file.unlink()
     skills_path = _write_skills_json(skills_by_id, out_dir)
     categories_path = _write_categories_json(categories, out_dir)
     other_path = _write_other_sections_json(resume_meta, out_dir)

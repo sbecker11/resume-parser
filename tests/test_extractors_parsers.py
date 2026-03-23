@@ -24,6 +24,7 @@ from resume_parser.parsers import (
     _css_name_from_hex,
     _normalize_date,
     _normalize_end_date,
+    _looks_like_education_job,
 )
 
 
@@ -297,6 +298,7 @@ class TestNormalizeDate(unittest.TestCase):
 
     def test_normalize_date_passthrough(self):
         self.assertEqual(_normalize_date("Aug 2024"), "Aug 2024")
+        self.assertEqual(_normalize_date("2020"), "2020")
 
     def test_normalize_end_date_present_current(self):
         self.assertEqual(_normalize_end_date("PRESENT"), "CURRENT_DATE")
@@ -414,6 +416,48 @@ class TestParseJobsWithLlm(unittest.TestCase):
         result = parse_jobs_with_llm(raw_text)
         edu = [j for j in result if "University of Example" in (j.get("employer") or "")]
         self.assertEqual(len(edu), 1)
+
+    @patch("resume_parser.parsers._call_llm")
+    def test_education_fallback_without_legitimate_degree_treated_as_job(self, mock_call_llm):
+        mock_call_llm.return_value = '{"jobs": [{"role": "Engineer", "employer": "Acme", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"}]}'
+        raw_text = (
+            "EXPERIENCE\n"
+            "Engineer at Acme\n\n"
+            "EDUCATION\n"
+            "University of Example\n"
+            "Resident Assistant\n"
+            "2016 - 2020\n"
+        )
+        result = parse_jobs_with_llm(raw_text)
+
+        # The fallback should produce a job-like entry, not an education entry.
+        self.assertTrue(
+            any(
+                j.get("employer") == "University of Example"
+                and j.get("role") == "Resident Assistant"
+                for j in result
+            )
+        )
+        self.assertFalse(any(j.get("role") == "Education" for j in result))
+
+
+class TestEducationDetectionRules(unittest.TestCase):
+    def test_requires_legitimate_degree_not_university_role(self):
+        self.assertFalse(
+            _looks_like_education_job(
+                {"role": "Resident Assistant", "employer": "University of Example"}
+            )
+        )
+        self.assertFalse(
+            _looks_like_education_job(
+                {"role": "Research Assistant", "employer": "University of Example"}
+            )
+        )
+        self.assertTrue(
+            _looks_like_education_job(
+                {"role": "M.S. Data Science", "employer": "University of Example"}
+            )
+        )
 
 
 class TestParseResumeSections(unittest.TestCase):
