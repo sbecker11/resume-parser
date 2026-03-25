@@ -165,4 +165,5 @@ if [[ $failed -gt 0 ]]; then
   exit 2
 fi
 
-echo "Done: parsed resumes written under: $OUTPUT_DIR"
+_log "100% SUCCESS: parsed=$parsed_ok/$total validated=$validated_ok/$total output=\"$OUTPUT_DIR\" log=\"$LOG_FILE\""
+echo "100% SUCCESS: parsed=$parsed_ok/$total validated=$validated_ok/$total output=\"$OUTPUT_DIR\" log=\"$LOG_FILE\""
