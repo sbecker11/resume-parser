@@ -223,7 +223,8 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
         if not block:
             continue
 
-        # Split into chunks by blank lines (one chunk ~= one education entry)
+        # Split into chunks even when the resume text doesn't include blank lines.
+        # Heuristic: start a new chunk whenever we see another school line.
         chunks: list[list[str]] = []
         cur: list[str] = []
         for ln in block:
@@ -231,31 +232,55 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
                 if cur:
                     chunks.append(cur)
                     cur = []
-            else:
+                continue
+            if _SCHOOL_RE.search(ln):
+                if cur:
+                    chunks.append(cur)
+                    cur = []
                 cur.append(ln)
+                continue
+            cur.append(ln)
         if cur:
             chunks.append(cur)
 
         for chunk in chunks:
             school = ""
-            for ln in chunk:
-                if _SCHOOL_RE.search(ln):
-                    school = ln
-                    break
+            school_idx: int | None = None
+            for idx, ln in enumerate(chunk):
+                if not _SCHOOL_RE.search(ln):
+                    continue
+                school_idx = idx
+                # Some extracted resume text places school and degree on the same line separated by tabs.
+                if "\t" in ln:
+                    school = ln.split("\t", 1)[0].strip()
+                else:
+                    school = ln.strip()
+                break
             if not school:
                 continue
 
             # First attempt: treat as education only if we find a legitimate degree term.
             degree = ""
-            for ln in chunk:
-                if ln == school:
-                    continue
+            if school_idx is None:
+                # Should be impossible because we set it when school found.
+                school_idx = 0
+
+            for ln in chunk[school_idx + 1 :]:
                 # Avoid classifying employment roles at universities as "education".
                 if is_non_degree_role(ln):
                     continue
                 if has_legitimate_degree(ln):
-                    degree = ln
+                    degree = str(ln).strip()
                     break
+
+            # Also handle the case where the school and degree are on the same line separated by a tab.
+            if not degree and school_idx is not None:
+                ln0 = chunk[school_idx]
+                if "\t" in str(ln0):
+                    left = str(ln0).split("\t", 1)[0].strip()
+                    right = str(ln0).split("\t", 1)[1].strip()
+                    if left == school and has_legitimate_degree(right):
+                        degree = right
 
             # _YEAR_RE has a capturing group; recover full years using finditer.
             year_full = [m.group(0) for m in _YEAR_RE.finditer(" ".join(chunk))]
@@ -267,7 +292,19 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
             # Fallback: if no legitimate degree term exists, treat this as a job-like entry.
             # This keeps employment roles (e.g. "Resident Assistant") from incorrectly landing in education.json.
             if degree:
-                desc_lines = [ln for ln in chunk if ln not in {school, degree}]
+                desc_lines: list[str] = []
+                for ln in chunk:
+                    ln_s = str(ln).strip()
+                    if not ln_s:
+                        continue
+                    if ln_s == school:
+                        continue
+                    if ln_s == degree:
+                        continue
+                    # If a line contains both school and a degree token, don't leak it into description.
+                    if school and _SCHOOL_RE.search(ln_s) and has_legitimate_degree(ln_s):
+                        continue
+                    desc_lines.append(ln_s)
                 description = " • ".join(desc_lines) if desc_lines else ""
                 out.append(
                     {

@@ -440,6 +440,42 @@ class TestParseJobsWithLlm(unittest.TestCase):
         )
         self.assertFalse(any(j.get("role") == "Education" for j in result))
 
+    @patch("resume_parser.parsers._call_llm")
+    def test_education_fallback_pairs_institution_and_degree_when_no_blank_lines(self, mock_call_llm):
+        """
+        EDUCATION blocks sometimes come in as:
+          School line
+          Degree line
+          School line (again)
+          Degree line
+        without blank lines between entries.
+        """
+        mock_call_llm.return_value = '{"jobs": [{"role": "Engineer", "employer": "Acme", "start": "2022-01-01", "end": "CURRENT_DATE", "description": "Work"}]}'
+        raw_text = (
+            "EXPERIENCE\n"
+            "Engineer at Acme\n\n"
+            "EDUCATION\n"
+            "Massachusetts Institute of Technology\n"
+            "PhD, Media Arts & Sciences — Computer Vision / Video Coding / Computer Graphics\n"
+            "Brigham Young University\n"
+            "MS, Computer Science — Medical Imaging / Computer Graphics\n"
+            "Brigham Young University\n"
+            "BS, Design Engineering Technology — CAD / CAE / CAM\n"
+        )
+        result = parse_jobs_with_llm(raw_text)
+
+        mit_entries = [j for j in result if (j.get("employer") or "") == "Massachusetts Institute of Technology"]
+        byu_entries = [j for j in result if (j.get("employer") or "") == "Brigham Young University"]
+
+        self.assertEqual(len(mit_entries), 1)
+        self.assertIn("PhD", (mit_entries[0].get("role") or ""))
+
+        # BYU appears twice with two distinct degrees.
+        self.assertEqual(len(byu_entries), 2)
+        byu_roles = [j.get("role") or "" for j in byu_entries]
+        self.assertTrue(any("MS" in r for r in byu_roles))
+        self.assertTrue(any("BS" in r for r in byu_roles))
+
 
 class TestEducationDetectionRules(unittest.TestCase):
     def test_requires_legitimate_degree_not_university_role(self):
