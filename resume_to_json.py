@@ -123,7 +123,10 @@ def _looks_like_education_entry(item: dict) -> bool:
         return False
     if _NON_DEGREE_ROLE_RE.search(role):
         return False
-    return bool(_SCHOOL_RE.search(employer) or _SCHOOL_RE.search(role))
+    # Strictly gate education by "is this role a legitimate degree?".
+    # We intentionally do not require school-keywords in the institution name
+    # because many resumes use abbreviations (e.g. MIT, BYU).
+    return True
 
 
 def _split_jobs_and_education(items: list[dict]) -> tuple[list[dict], list[dict]]:

@@ -20,8 +20,16 @@ _PAREN_SKILL_PATTERN = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*$")
 _PAREN_SKILL_AT_START = re.compile(r"^([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)", re.MULTILINE)
 _PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)")
 
-_EDU_HEADING_RE = re.compile(r"^\s*education\s*$", re.IGNORECASE)
+_EDU_HEADING_RE = re.compile(
+    r"^\s*education\b"
+    r"(?:\s*(?:and|&|/|-)\s*(?:credentials|qualifications|training)\s*)?"
+    r"$",
+    re.IGNORECASE,
+)
 _SECTION_HEADING_RE = re.compile(r"^\s*[A-Z][A-Z0-9 /&-]{2,}\s*$")
+_CREDENTIALS_HEADING_RE = re.compile(
+    r"^\s*certifications?\s*[:\-]", re.IGNORECASE
+)
 _SCHOOL_RE = re.compile(
     r"\b(university|college|institute|school|academy|polytechnic)\b",
     re.IGNORECASE,
@@ -154,7 +162,10 @@ def _looks_like_education_job(job: dict[str, Any]) -> bool:
         return False
     if _NON_DEGREE_ROLE_RE.search(role):
         return False
-    return bool(_SCHOOL_RE.search(employer) or _SCHOOL_RE.search(role))
+    # Strictly gate education by "degree-like" content in the role.
+    # Do not require school-keywords in the institution name because many
+    # resumes use abbreviations (e.g., MIT, BYU).
+    return True
 
 
 def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
@@ -178,6 +189,9 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
                 if block:
                     block.append("")
                 continue
+            # Avoid polluting education entries with credential/certification lines.
+            if _CREDENTIALS_HEADING_RE.match(ln):
+                break
             if _SECTION_HEADING_RE.match(ln):
                 break
             block.append(ln)
@@ -187,13 +201,15 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
 
         # Split into chunks even when the resume text doesn't include blank lines.
         # Heuristic: start a new chunk whenever we see another school line.
+        # IMPORTANT: don't split chunks on blank lines. Many resumes place
+        # "School" and "Degree" on different lines with an empty line
+        # between them; splitting on blanks would prevent pairing.
         chunks: list[list[str]] = []
         cur: list[str] = []
         for ln in block:
             if ln == "":
                 if cur:
-                    chunks.append(cur)
-                    cur = []
+                    cur.append("")
                 continue
             if _SCHOOL_RE.search(ln):
                 if cur:
@@ -219,6 +235,68 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
                     school = str(ln).strip()
                 break
             if not school:
+                # Handle table-like rows like:
+                #   "PhD, ... | MIT 1997"
+                #   "BS, ...  | BYU 1987"
+                parsed_any = False
+                for i, ln in enumerate(chunk):
+                    ln_s = str(ln)
+                    if not _DEGREE_RE.search(ln_s):
+                        continue
+                    if "|" not in ln_s:
+                        continue
+                    if _NON_DEGREE_ROLE_RE.search(ln_s):
+                        continue
+
+                    left, right = ln_s.split("|", 1)
+                    degree = left.strip()
+                    if not _DEGREE_RE.search(degree) or _NON_DEGREE_ROLE_RE.search(degree):
+                        continue
+
+                    right_s = right.strip()
+                    institution = right_s.split()[0] if right_s else ""
+                    if not institution:
+                        continue
+
+                    # Description: grab following non-empty lines until next degree row.
+                    desc_lines: list[str] = []
+                    for ln2 in chunk[i + 1 :]:
+                        ln2_s = str(ln2).strip()
+                        if not ln2_s:
+                            continue
+                        if _DEGREE_RE.search(ln2_s):
+                            break
+                        if ln2_s == institution:
+                            continue
+                        if ln2_s == degree:
+                            continue
+                        if _CREDENTIALS_HEADING_RE.match(ln2_s):
+                            break
+                        desc_lines.append(ln2_s)
+                    description = " • ".join(desc_lines) if desc_lines else ""
+
+                    # Extract years from this specific row.
+                    years = [m.group(0) for m in _YEAR_RE.finditer(ln_s)]
+                    start_year = years[0] if len(years) >= 1 else ""
+                    end_year = years[1] if len(years) >= 2 else ""
+                    start = f"{start_year}-01-01" if start_year else ""
+                    end = f"{end_year}-12-31" if end_year else ""
+
+                    out.append(
+                        {
+                            "role": degree,
+                            "employer": institution,
+                            "start": start,
+                            "end": end,
+                            "employer_city": None,
+                            "employer_website": None,
+                            "description": description,
+                        }
+                    )
+                    parsed_any = True
+
+                if not parsed_any:
+                    continue
                 continue
 
             # First attempt: treat as education only if we find a legitimate degree term.
@@ -278,6 +356,8 @@ def _extract_education_jobs_from_text(raw_text: str) -> list[dict[str, Any]]:
                 job_role = ""
                 for ln in chunk:
                     if ln == school:
+                        continue
+                    if not str(ln).strip():
                         continue
                     if ln.strip().lower() == "education":
                         continue
