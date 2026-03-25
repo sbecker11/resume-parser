@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PYTHONUNBUFFERED=1
 
 usage() {
   cat <<'EOF'
 Usage:
-  parse_resumes_batch.sh <input-resumes-folder> <output-parsed-resumes-folder> [--render] [--merge]
+  parse_resumes_batch.sh <input-resumes-folder> <output-parsed-resumes-folder> [--render]
 
 Description:
   Parses every .docx/.pdf resume in <input-resumes-folder> with resume-to-json
@@ -12,7 +13,7 @@ Description:
 
 Options:
   --render   Also render resume.html after parse
-  --merge    Enable interactive skill-merge step (default is --no-merge for batch safety)
+            NOTE: this script is non-interactive and will not run any prompts.
 EOF
 }
 
@@ -37,9 +38,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --render)
       RENDER_FLAG=(--render)
-      ;;
-    --merge)
-      MERGE_FLAG=()
       ;;
     *)
       echo "Error: unknown option: $1" >&2
@@ -75,17 +73,17 @@ _log() {
 
 run_parse() {
   if command -v resume-to-json >/dev/null 2>&1; then
-    resume-to-json "$@"
+    stdbuf -oL -eL resume-to-json "$@" 2>&1 | stdbuf -oL -eL tee -a "$LOG_FILE"
   else
-    python -m resume_parser.resume_to_json "$@"
+    stdbuf -oL -eL python -u -m resume_parser.resume_to_json "$@" 2>&1 | stdbuf -oL -eL tee -a "$LOG_FILE"
   fi
 }
 
 run_validate() {
   if command -v validate-parsed-resume >/dev/null 2>&1; then
-    validate-parsed-resume "$@"
+    stdbuf -oL -eL validate-parsed-resume "$@" 2>&1 | stdbuf -oL -eL tee -a "$LOG_FILE"
   else
-    python -m resume_parser.contracts.validate_parsed_resume "$@"
+    stdbuf -oL -eL python -u -m resume_parser.contracts.validate_parsed_resume "$@" 2>&1 | stdbuf -oL -eL tee -a "$LOG_FILE"
   fi
 }
 
@@ -130,7 +128,7 @@ for resume_path in "$INPUT_DIR"/*; do
   fi
 
   validate_start_ts="$(date +%s)"
-  if run_validate "$out_dir" >/dev/null; then
+  if run_validate "$out_dir"; then
     validated_ok=$((validated_ok + 1))
     validate_elapsed=$(( $(date +%s) - validate_start_ts ))
     _log "Validation OK (elapsed ${validate_elapsed}s): $out_dir"

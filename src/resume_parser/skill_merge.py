@@ -5,6 +5,8 @@ Skill merge: LLM suggests duplicate/similar skills to merge; human approves befo
 
 import json
 import re
+import os
+import sys
 from typing import Any
 
 # Import LLM helpers from parsers
@@ -235,9 +237,31 @@ def run_merge_interactive(
     if not suggestions:
         return []
 
+    # Non-interactive mode:
+    # When run from the Node server, `stdin` is effectively closed/ignored, so `input()`
+    # would block or emit prompts without newlines (which breaks line-by-line SSE streaming).
+    #
+    # Supported env var:
+    # - RESUME_PARSER_SKILL_MERGE_MODE=interactive | accept_all | no_merge | quit
+    #   (default when stdin is not a TTY: no_merge)
+    merge_mode = (os.environ.get('RESUME_PARSER_SKILL_MERGE_MODE') or '').strip().lower()
+    if merge_mode in ('q', 'quit'):
+        return []
+
+    if merge_mode in ('accept_all', 'a', 'y_all'):
+        accept_all = True
+    elif merge_mode in ('no_merge', 'n', 'reject_all', 'none'):
+        return []
+    elif merge_mode in ('interactive', 'i'):
+        accept_all = False
+    else:
+        # If unset (or unknown) and stdin isn't a TTY, don't prompt; don't block the server.
+        if not sys.stdin.isatty():
+            return []
+        accept_all = False
+
     id_to_name = {d["id"]: n for n, d in skills.items() if d.get("id")}
     replacements: list[tuple[list[str], str]] = []
-    accept_all = False
     for sug in suggestions:
         if accept_all:
             r = _do_apply(skills, jobs, categories, sug, id_to_name)
