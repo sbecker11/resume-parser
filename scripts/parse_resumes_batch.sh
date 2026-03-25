@@ -63,6 +63,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 export PYTHONPATH="${REPO_ROOT}/src:${PYTHONPATH:-}"
 
+LOG_FILE="$OUTPUT_DIR/parse_resumes_batch_$(date -u +%Y%m%dT%H%M%SZ).log"
+touch "$LOG_FILE"
+
+_log() {
+  local msg="$*"
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[$ts] $msg" | tee -a "$LOG_FILE"
+}
+
 run_parse() {
   if command -v resume-to-json >/dev/null 2>&1; then
     resume-to-json "$@"
@@ -85,6 +95,8 @@ validated_ok=0
 education_found=0
 failed=0
 
+_log "Batch start: input=\"$INPUT_DIR\" output=\"$OUTPUT_DIR\" merge=\"${MERGE_FLAG[*]:-(--no-merge)}\" render=\"${RENDER_FLAG[*]}\" log=\"$LOG_FILE\""
+
 shopt -s nullglob
 for resume_path in "$INPUT_DIR"/*; do
   if [[ ! -f "$resume_path" ]]; then
@@ -104,25 +116,35 @@ for resume_path in "$INPUT_DIR"/*; do
   out_dir="$OUTPUT_DIR/$safe_stem"
   mkdir -p "$out_dir"
 
-  echo ""
-  echo "[$total] Parsing: $resume_path"
+  _log "[$total] Parsing: $resume_path -> \"$out_dir\""
+  parse_start_ts="$(date +%s)"
   if run_parse "$resume_path" -o "$out_dir" "${MERGE_FLAG[@]}" "${RENDER_FLAG[@]}"; then
     parsed_ok=$((parsed_ok + 1))
+    parse_elapsed=$(( $(date +%s) - parse_start_ts ))
+    _log "Parse OK (elapsed ${parse_elapsed}s): $resume_path"
   else
     echo "  Parse failed: $resume_path" >&2
     failed=$((failed + 1))
+    _log "Parse FAILED: $resume_path"
     continue
   fi
 
+  validate_start_ts="$(date +%s)"
   if run_validate "$out_dir" >/dev/null; then
     validated_ok=$((validated_ok + 1))
+    validate_elapsed=$(( $(date +%s) - validate_start_ts ))
+    _log "Validation OK (elapsed ${validate_elapsed}s): $out_dir"
   else
     echo "  Validation failed: $out_dir" >&2
     failed=$((failed + 1))
+    _log "Validation FAILED: $out_dir"
   fi
 
   if [[ -f "$out_dir/education.json" ]]; then
     education_found=$((education_found + 1))
+    _log "education.json present for: $out_dir"
+  else
+    _log "education.json absent for: $out_dir"
   fi
 done
 
@@ -133,6 +155,8 @@ echo "  parsed successfully:      $parsed_ok"
 echo "  validated successfully:   $validated_ok"
 echo "  with education.json:      $education_found"
 echo "  failures:                 $failed"
+
+_log "Batch summary: total=$total parsed_ok=$parsed_ok validated_ok=$validated_ok education_found=$education_found failures=$failed"
 
 if [[ $total -eq 0 ]]; then
   echo "No DOCX/PDF files found in: $INPUT_DIR" >&2
