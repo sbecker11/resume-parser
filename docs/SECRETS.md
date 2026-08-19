@@ -12,6 +12,44 @@ Those secrets power CI/CD runs on GitHub's runners and can never be read back
 out (by design — they're write-only). git-crypt is what makes `.env` itself
 travel with `git clone`/`git pull` for local development.
 
+## When and how to decrypt .env
+
+**When you need to run `git-crypt unlock`:**
+
+- **First clone on a new machine.** `.env` in a fresh `git clone` is still
+  the encrypted blob — the repo hasn't been unlocked there yet.
+- **After restoring or rotating the key** (e.g. new laptop, key was
+  regenerated per "Rotating the key" below).
+- **Any time `.env` in your working tree is still ciphertext.** Signs of
+  this: `python-dotenv`/`load_dotenv_safely()` logs a warning like "likely
+  still git-crypt encrypted" (see `src/resume_parser/env_loader.py`) instead
+  of loading real values, or opening `.env` in an editor shows
+  binary/garbage instead of `KEY=value` lines.
+
+**How to unlock:**
+
+```bash
+git-crypt unlock ~/.git-crypt-keys/resume-parser.key
+```
+
+**How to tell it worked:**
+
+```bash
+git-crypt status
+```
+Should list `.env` as `not encrypted` (i.e. decrypted in the working tree —
+the label refers to the working-tree state, not the git-history blob, which
+always stays encrypted). You can also just open `.env` directly: plaintext
+`KEY=value` lines means it worked; a line starting with `\0GITCRYPT` means
+it's still locked.
+
+You only need to run `unlock` once per clone/checkout of the repo on a given
+machine — it stays decrypted across `git pull`/`git checkout` after that, for
+as long as the key file is present at the path you unlocked with.
+
+CI never unlocks — see `docs/TEST-COVERAGE.md` for why tests don't need a
+real `.env`.
+
 ## First time on a new machine
 
 1. Clone the repo as normal:
@@ -29,7 +67,7 @@ travel with `git clone`/`git pull` for local development.
    scp me@old-machine:~/.git-crypt-keys/resume-parser.key ~/.git-crypt-keys/
    ```
 
-3. Unlock:
+3. Unlock (see "When and how to decrypt .env" above):
    ```bash
    git-crypt unlock ~/.git-crypt-keys/resume-parser.key
    ```

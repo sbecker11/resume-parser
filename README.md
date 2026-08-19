@@ -178,6 +178,9 @@ coverage html
 # open htmlcov/index.html
 ```
 
+The project enforces an 80% line-coverage floor per file (not just in
+aggregate), including in CI — see `docs/TEST-COVERAGE.md`.
+
 ## Flyer integration
 
 The generated output files can be read by `workspace-resume/resume-consumer`
