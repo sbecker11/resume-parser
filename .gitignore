@@ -1,4 +1,7 @@
-.env
+# .env is intentionally tracked + git-crypt encrypted (see .gitattributes /
+# docs/SECRETS.md) so it round-trips through clone/pull. Do NOT re-add it
+# here; ignore local override files instead if you create any.
+.env.local
 __pycache__/
 *.pyc
 .venv/
