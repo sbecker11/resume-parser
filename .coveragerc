@@ -9,3 +9,6 @@ omit =
 # Same omits for the report (in case run picks up something)
 exclude_lines =
     pragma: no cover
+# Global floor; scripts/check_coverage_per_file.py additionally enforces this per-file
+# (mirroring resume-flyer's vitest `thresholds: { perFile: true, lines: 80 }`).
+fail_under = 80

@@ -32,5 +32,15 @@ jobs:
       # no real secrets are required. If a future test needs a real key,
       # add it as a repo secret and pass it here via `env:` rather than
       # committing it.
-      - name: Run tests
-        run: python -m pytest tests/ -q
+      - name: Run tests with coverage
+        run: coverage run --source=src/resume_parser -m pytest tests/ -q
+
+      # Global floor (coverage's own [report] fail_under=80 in .coveragerc) plus a
+      # stricter per-file floor, so one well-tested file can't mask another that
+      # regresses below 80% lines.
+      - name: Enforce 80% coverage (per file)
+        run: python scripts/check_coverage_per_file.py
+
+      - name: Coverage summary
+        if: always()
+        run: coverage report -m --include="src/*"

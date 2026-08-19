@@ -30,6 +30,7 @@ from resume_parser.parsers import (
     _normalize_date,
     _normalize_end_date,
     _looks_like_education_job,
+    _split_description_bullets,
 )
 
 
@@ -106,6 +107,25 @@ class TestExpandSkillParens(unittest.TestCase):
         spaced = set(expand_skill_parens("Name (a, b, c)"))
         self.assertEqual(no_space, spaced)
         self.assertEqual(no_space, {"Name a", "Name b", "Name c"})
+
+    def test_parens_with_only_commas_and_spaces_returns_original(self):
+        """Parens containing no real items (only commas/whitespace) return the name unchanged."""
+        self.assertEqual(expand_skill_parens("Foo (   )"), ["Foo (   )"])
+        self.assertEqual(expand_skill_parens("Foo ( , , )"), ["Foo ( , , )"])
+
+
+class TestSplitDescriptionBullets(unittest.TestCase):
+    """Test parsers._split_description_bullets."""
+
+    def test_empty_description_returns_empty_list(self):
+        self.assertEqual(_split_description_bullets(""), [])
+        self.assertEqual(_split_description_bullets(None), [])
+
+    def test_splits_on_bullet_markers(self):
+        self.assertEqual(
+            _split_description_bullets("• First\n• Second"),
+            ["• First", "• Second"],
+        )
 
 
 class TestContentIndexTags(unittest.TestCase):
@@ -187,6 +207,21 @@ class TestContentIndexTags(unittest.TestCase):
             [("1", "A"), ("1.1", "B"), ("2", "C")],
         )
 
+    def test_expand_falls_back_to_employer_tag_when_outline_index_missing(self):
+        """_llm_fragments_by_outline_index derives parent_idx from a tagged employer
+        when the job dict has no outlineIndex key at all (pre-apply_outline_fields)."""
+        raw = "[1] Foo Corp\n\n[1.1] • Bar — Did some work.\n"
+        json_jobs = [
+            {"employer": "[1] Foo Corp", "role": "R", "start": "2020", "end": "2021", "description": "no tags here"},
+        ]
+        out = expand_jobs_one_per_content_index(json_jobs, raw)
+        by_idx = {j["outlineIndex"]: j for j in out}
+        self.assertEqual(by_idx["1"]["employer"], "Foo Corp")
+        # "1.1" has no matching LLM fragment (only "1" resolved from the employer tag),
+        # so its description must come from the raw-text heading itself (text_desc branch).
+        self.assertEqual(by_idx["1.1"]["employer"], "Bar")
+        self.assertIn("Did some work.", by_idx["1.1"]["Description"])
+
 
 class TestExpandParensInText(unittest.TestCase):
     """Test parsers.expand_parens_in_text (in-description replacement)."""
@@ -217,6 +252,21 @@ class TestExpandParensInText(unittest.TestCase):
         result = expand_parens_in_text("Used CI/CD (GitHub Actions, Jenkins) for pipelines.")
         self.assertEqual(result, "Used CI/CD GitHub Actions, CI/CD Jenkins for pipelines.")
         self.assertEqual(expand_skill_parens("CI/CD (GitHub Actions, Jenkins)"), ["CI/CD GitHub Actions", "CI/CD Jenkins"])
+
+    def test_parens_at_very_start_of_text_expand(self):
+        """A '(a,b)' group at position 0 (no leading space) is matched by the start-of-string regex."""
+        result = expand_parens_in_text("AWS (S3, EC2) is great.")
+        self.assertEqual(result, "AWS S3, AWS EC2 is great.")
+
+    def test_parens_at_start_with_only_commas_left_unchanged(self):
+        """Parens at the very start with no real items inside are left untouched."""
+        result = expand_parens_in_text("AWS ( , ) is great.")
+        self.assertEqual(result, "AWS ( , ) is great.")
+
+    def test_parens_after_space_with_only_commas_left_unchanged(self):
+        """Same empty-items case, but preceded by a word (hits the after-space regex/callback)."""
+        result = expand_parens_in_text("Used AWS ( , ) here.")
+        self.assertEqual(result, "Used AWS ( , ) here.")
 
 
 class TestGetLlmProvider(unittest.TestCase):
@@ -289,7 +339,7 @@ class TestExtractDocxBody(unittest.TestCase):
         mock_doc.tables = [mock_table]
         mock_document_cls.return_value = mock_doc
 
-        from extractors import _extract_docx
+        from resume_parser.extractors import _extract_docx
         result = _extract_docx(Path("/fake/file.docx"))
         self.assertIn("Hello World", result)
         self.assertIn("Section two", result)
@@ -302,9 +352,25 @@ class TestExtractDocxBody(unittest.TestCase):
         mock_doc.paragraphs = [MagicMock(text="  "), MagicMock(text="Ok")]
         mock_doc.tables = []
         mock_document_cls.return_value = mock_doc
-        from extractors import _extract_docx
+        from resume_parser.extractors import _extract_docx
         result = _extract_docx(Path("/fake/file.docx"))
         self.assertEqual(result, "Ok")
+
+    @patch("docx.Document")
+    def test_extract_docx_skips_empty_table_rows(self, mock_document_cls):
+        mock_doc = MagicMock()
+        mock_doc.paragraphs = []
+        empty_row = MagicMock()
+        empty_row.cells = [MagicMock(text="  "), MagicMock(text="")]
+        filled_row = MagicMock()
+        filled_row.cells = [MagicMock(text="X"), MagicMock(text="Y")]
+        mock_table = MagicMock()
+        mock_table.rows = [empty_row, filled_row]
+        mock_doc.tables = [mock_table]
+        mock_document_cls.return_value = mock_doc
+        from resume_parser.extractors import _extract_docx
+        result = _extract_docx(Path("/fake/file.docx"))
+        self.assertEqual(result, "X | Y")
 
 
 class TestExtractPdfBody(unittest.TestCase):
@@ -323,7 +389,7 @@ class TestExtractPdfBody(unittest.TestCase):
         mock_pdfplumber = MagicMock()
         mock_pdfplumber.open = mock_open
         with patch.dict("sys.modules", {"pdfplumber": mock_pdfplumber}):
-            from extractors import _extract_pdf
+            from resume_parser.extractors import _extract_pdf
             result = _extract_pdf(Path("/fake/file.pdf"))
         self.assertIn("Page one text", result)
         self.assertIn("Page two", result)
@@ -340,9 +406,22 @@ class TestExtractPdfBody(unittest.TestCase):
         mock_pdfplumber = MagicMock()
         mock_pdfplumber.open = mock_open
         with patch.dict("sys.modules", {"pdfplumber": mock_pdfplumber}):
-            from extractors import _extract_pdf
+            from resume_parser.extractors import _extract_pdf
             result = _extract_pdf(Path("/fake/file.pdf"))
         self.assertEqual(result, "Only this")
+
+    def test_extract_pdf_no_pages_returns_empty_string(self):
+        mock_pdf = MagicMock()
+        mock_pdf.pages = []
+        mock_open = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_pdf
+        mock_open.return_value.__exit__.return_value = None
+        mock_pdfplumber = MagicMock()
+        mock_pdfplumber.open = mock_open
+        with patch.dict("sys.modules", {"pdfplumber": mock_pdfplumber}):
+            from resume_parser.extractors import _extract_pdf
+            result = _extract_pdf(Path("/fake/file.pdf"))
+        self.assertEqual(result, "")
 
 
 class TestHexToRgb(unittest.TestCase):
