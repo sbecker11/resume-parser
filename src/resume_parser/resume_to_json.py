@@ -21,10 +21,10 @@ import shutil
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
+from .env_loader import load_dotenv_safely
 
 # Load .env from cwd (consumer's project) or repo root when developing
-load_dotenv(Path.cwd() / ".env")
+load_dotenv_safely(Path.cwd() / ".env")
 
 from .education_rules import has_legitimate_degree, is_non_degree_role, sanitize_education_description
 from .extractors import extract_text

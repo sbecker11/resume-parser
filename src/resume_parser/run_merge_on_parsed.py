@@ -22,8 +22,8 @@ import re
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path.cwd() / ".env")
+from .env_loader import load_dotenv_safely
+load_dotenv_safely(Path.cwd() / ".env")
 
 
 def _require_llm_api_key() -> None:

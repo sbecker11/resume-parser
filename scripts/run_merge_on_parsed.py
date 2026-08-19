@@ -27,9 +27,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-# Load .env so ANTHROPIC_API_KEY is available for skill merge LLM calls
+# Load .env so ANTHROPIC_API_KEY is available for skill merge LLM calls.
+# .env is git-crypt encrypted at rest (docs/SECRETS.md); if this repo hasn't
+# been `git-crypt unlock`ed yet, the file on disk is still ciphertext, which
+# isn't valid dotenv syntax. Loading it is a pure convenience on top of
+# whatever's already in the environment, so report and skip rather than crash.
 from dotenv import load_dotenv
-load_dotenv(ROOT / ".env")
+try:
+    load_dotenv(ROOT / ".env")
+except (UnicodeDecodeError, ValueError) as error:
+    print(
+        f"Warning: could not load {ROOT / '.env'} (likely still git-crypt "
+        f"encrypted): {error}. Remedy: skipping .env load, relying on real "
+        f"environment variables.",
+        file=sys.stderr,
+    )
 
 
 def _require_llm_api_key() -> None:

@@ -22,10 +22,11 @@ import shutil
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+from resume_parser.env_loader import load_dotenv_safely
 
 # Load .env from script directory (reliable regardless of cwd)
-load_dotenv(Path(__file__).resolve().parent / ".env")
+load_dotenv_safely(Path(__file__).resolve().parent / ".env")
 
 # Add parent for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent))
