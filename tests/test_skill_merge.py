@@ -1,4 +1,5 @@
 """Tests for resume_parser.skill_merge module."""
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -209,6 +210,18 @@ class TestSlugify(unittest.TestCase):
 
 
 class TestRunMergeInteractive(unittest.TestCase):
+    def setUp(self):
+        # run_merge_interactive() short-circuits to a no-op when stdin isn't a
+        # TTY and RESUME_PARSER_SKILL_MERGE_MODE is unset (so the Node server
+        # never blocks on input()). Force interactive mode explicitly so these
+        # tests exercise the prompting path regardless of how the test runner
+        # itself is invoked (e.g. CI, which never has a TTY stdin).
+        self._env_patcher = patch.dict(
+            os.environ, {"RESUME_PARSER_SKILL_MERGE_MODE": "interactive"}
+        )
+        self._env_patcher.start()
+        self.addCleanup(self._env_patcher.stop)
+
     def test_does_nothing_when_no_suggestions(self):
         skills = {
             "Python": {"id": "python", "url": "", "img": "", "jobIDs": [], "categoryIDs": []},

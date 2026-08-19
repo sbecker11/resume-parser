@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package + dev dependencies
+        run: pip install -e ".[dev]"
+
+      # Tests patch ANTHROPIC_API_KEY / OPENAI_API_KEY via unittest.mock —
+      # no real secrets are required. If a future test needs a real key,
+      # add it as a repo secret and pass it here via `env:` rather than
+      # committing it.
+      - name: Run tests
+        run: python -m pytest tests/ -q
