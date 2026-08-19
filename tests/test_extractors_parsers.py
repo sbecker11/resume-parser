@@ -14,6 +14,11 @@ from resume_parser.parsers import (
     expand_parens_in_text,
     get_llm_provider,
     jobs_to_json_format,
+    apply_outline_fields,
+    extract_content_index_tag,
+    extract_tagged_outline_entries,
+    parse_content_index_heading,
+    expand_jobs_one_per_content_index,
     enrich_skills_with_llm,
     categorize_skills_with_llm,
     build_categories_dict,
@@ -101,6 +106,86 @@ class TestExpandSkillParens(unittest.TestCase):
         spaced = set(expand_skill_parens("Name (a, b, c)"))
         self.assertEqual(no_space, spaced)
         self.assertEqual(no_space, {"Name a", "Name b", "Name c"})
+
+
+class TestContentIndexTags(unittest.TestCase):
+    """Extract [1.1.3] outline tags from job headings."""
+
+    def test_extract_content_index_tag(self):
+        idx, rest = extract_content_index_tag("[1.2.1] Adobe / Data Analytics")
+        self.assertEqual(idx, "1.2.1")
+        self.assertEqual(rest, "Adobe / Data Analytics")
+
+    def test_apply_outline_fields_strips_tag_and_sets_section(self):
+        job = apply_outline_fields(
+            {"employer": "[1.1] Spexture Portfolio Projects", "role": "", "start": "", "end": "", "description": ""}
+        )
+        self.assertEqual(job["outlineIndex"], "1.1")
+        self.assertEqual(job["outlineKind"], "section")
+        self.assertEqual(job["employer"], "Spexture Portfolio Projects")
+
+    def test_jobs_to_json_format_applies_outline(self):
+        out = jobs_to_json_format(
+            [{"employer": "[1.1.10] recruiting-automation", "role": "Portfolio", "start": "2024", "end": "CURRENT_DATE", "description": "Pipeline orchestration."}]
+        )
+        self.assertEqual(out[0]["outlineIndex"], "1.1.10")
+        self.assertEqual(out[0]["employer"], "recruiting-automation")
+
+    def test_expand_one_job_per_tagged_line(self):
+        raw = (
+            "[1] Spexture (Independent Consulting)\n\n"
+            "Consulting blurb.\n\n"
+            "[1.1] Spexture Portfolio Projects\n\n"
+            "[1.1.1] • resume-parser — Agentic DOCX parser\n\n"
+            "[1.2] Spexture Client Engagements\n\n"
+            "[1.2.1] • Adobe (03/2025 – 07/2025) — Built admin tools.\n\n"
+            "[2] SeniorLink (now Careforth)\n"
+        )
+        collapsed = jobs_to_json_format(
+            [
+                {
+                    "employer": "[1] Spexture (Independent Consulting)",
+                    "role": "Consultant",
+                    "start": "11/2019",
+                    "end": "CURRENT_DATE",
+                    "description": "• Consulting blurb.\n• [1.1.1] resume-parser — Agentic [DOCX] parser\n• [1.2.1] Adobe 03/2025 – 07/2025 — Built [Python] admin tools.",
+                },
+                {
+                    "employer": "[2] SeniorLink (now Careforth)",
+                    "role": "Senior Data Engineer",
+                    "start": "06/2017",
+                    "end": "11/2019",
+                    "description": "• PySpark on EMR.",
+                },
+            ]
+        )
+        out = expand_jobs_one_per_content_index(collapsed, raw)
+        indices = [j["outlineIndex"] for j in out]
+        self.assertEqual(indices, ["1", "1.1", "1.1.1", "1.2", "1.2.1", "2"])
+        by_idx = {j["outlineIndex"]: j for j in out}
+        self.assertEqual(by_idx["1.1"]["outlineKind"], "section")
+        self.assertEqual(by_idx["1.1.1"]["employer"], "resume-parser")
+        self.assertIn("DOCX", by_idx["1.1.1"]["Description"])
+        self.assertEqual(by_idx["1.2.1"]["employer"], "Adobe")
+        self.assertEqual(by_idx["1.2.1"]["start"], "03/2025")
+        self.assertEqual(by_idx["1"]["start"], "11/2019")
+        self.assertEqual(len(out), 6)
+
+    def test_parse_content_index_heading_paren_dates(self):
+        parsed = parse_content_index_heading(
+            "1.2.1", "• Adobe (03/2025 – 07/2025) — Built admin tools."
+        )
+        self.assertEqual(parsed["employer"], "Adobe")
+        self.assertEqual(parsed["start"], "03/2025")
+        self.assertEqual(parsed["end"], "07/2025")
+        self.assertIn("admin tools", parsed["description"])
+
+    def test_extract_tagged_outline_entries_unique_order(self):
+        raw = "[1] A\n[1.1] B\n[1] A again\n[2] C\n"
+        self.assertEqual(
+            extract_tagged_outline_entries(raw),
+            [("1", "A"), ("1.1", "B"), ("2", "C")],
+        )
 
 
 class TestExpandParensInText(unittest.TestCase):

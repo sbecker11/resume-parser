@@ -145,8 +145,9 @@ def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> s
     """Call LLM (provider from get_llm_provider / LLM_PROVIDER) and return response text. Anthropic only."""
     provider, client = _llm_provider()
     if provider == "anthropic":
+        model = (os.environ.get("ANTHROPIC_MODEL") or "claude-sonnet-4-6").strip()
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=model,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],

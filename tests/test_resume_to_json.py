@@ -75,6 +75,12 @@ class TestWriters(unittest.TestCase):
             data = json.loads(path.read_text())
             self.assertEqual(data["0"]["institution"], "University of Example")
 
+    def test_write_education_json_strips_licenses_dump(self):
+        from resume_parser.education_rules import sanitize_education_description
+        dump = "Licenses & certifications • PyTorch: 2024 • Key skills • Docker"
+        self.assertEqual(sanitize_education_description(dump), "")
+        self.assertEqual(sanitize_education_description("Thesis on structure from motion."), "Thesis on structure from motion.")
+
     def test_write_categories_json(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)

@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from .contracts.validate_parsed_resume import validate_education
-from .education_rules import has_legitimate_degree
+from .education_rules import has_legitimate_degree, sanitize_education_description
 from .extractors import extract_text
 from .parsers import parse_jobs_with_llm
 from .resume_to_json import _split_jobs_and_education
@@ -45,7 +45,7 @@ def _write_education_json(education_entries: list[dict], out_path: Path) -> None
             "institution": institution,
             "start": str(edu.get("start") or ""),
             "end": str(edu.get("end") or ""),
-            "description": (edu.get("description") or "").strip(),
+            "description": sanitize_education_description(edu.get("description") or ""),
         }
 
     out_path.write_text(json.dumps(education_by_id, ensure_ascii=False, indent=2), encoding="utf-8")

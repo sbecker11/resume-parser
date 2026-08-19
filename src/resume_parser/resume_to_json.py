@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 # Load .env from cwd (consumer's project) or repo root when developing
 load_dotenv(Path.cwd() / ".env")
 
-from .education_rules import has_legitimate_degree, is_non_degree_role
+from .education_rules import has_legitimate_degree, is_non_degree_role, sanitize_education_description
 from .extractors import extract_text
 from .skill_merge import run_merge_interactive
 from .parsers import (
@@ -40,6 +40,7 @@ from .parsers import (
     build_categories_dict,
     assign_skill_ids,
     jobs_to_json_format,
+    expand_jobs_one_per_content_index,
     get_llm_provider,
 )
 
@@ -286,8 +287,12 @@ def main() -> int:
     for job in jobs:
         job["description"] = expand_parens_in_text((job.get("description") or "").strip())
 
-    # Convert to JSON format
+    # Convert to JSON format. Content-index tags ([1.1.3]) are one job each.
     json_jobs = jobs_to_json_format(jobs)
+    before = len(json_jobs)
+    json_jobs = expand_jobs_one_per_content_index(json_jobs, raw_text)
+    if len(json_jobs) != before:
+        print(f"Expanded to {len(json_jobs)} jobs from content-index tags (LLM had {before})")
     education_by_id: dict[str, dict] = {}
     for i, edu in enumerate(education_entries):
         degree = (edu.get("role") or "").strip()
@@ -298,7 +303,7 @@ def main() -> int:
             "institution": institution,
             "start": str(edu.get("start") or ""),
             "end": str(edu.get("end") or ""),
-            "description": (edu.get("description") or "").strip(),
+            "description": sanitize_education_description(edu.get("description") or ""),
         }
 
     # Phase 3: Extract skills per job so we can assign jobIDs

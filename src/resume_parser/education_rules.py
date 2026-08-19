@@ -67,3 +67,23 @@ def has_legitimate_degree(role: str) -> bool:
 def is_non_degree_role(role: str) -> bool:
     return bool(_NON_DEGREE_ROLE_RE.search(role or ""))
 
+
+_EDU_SECTION_DUMP_RE = re.compile(
+    r"(?i)\b("
+    r"licenses?\s*&\s*certifications?|"
+    r"licenses?\s+and\s+certifications?|"
+    r"key\s+skills|"
+    r"technical\s+skills"
+    r")\b"
+)
+
+
+def sanitize_education_description(text: str | None) -> str:
+    """Drop parser leftovers (Licenses / Key skills dumps) from a degree description."""
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    if _EDU_SECTION_DUMP_RE.search(raw):
+        return ""
+    return raw
+

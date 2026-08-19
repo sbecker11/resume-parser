@@ -21,6 +21,9 @@ _PAREN_SKILL_PATTERN = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*$")
 _PAREN_SKILL_AT_START = re.compile(r"^([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)", re.MULTILINE)
 _PAREN_SKILL_AFTER_SPACE = re.compile(r"(\s+)([^\s(]+(?:\s+[^\s(]+)*)\s*\(([^)]+)\)")
 
+# Content-index tag on job headings: [1.1.3] Employer Name (sort only; stripped before display)
+_CONTENT_INDEX_TAG_RE = re.compile(r"^\[(\d+(?:\.\d+)*)\]\s*")
+
 _EDU_HEADING_RE = re.compile(
     r"^\s*education\b"
     r"(?:\s*(?:and|&|/|-)\s*(?:credentials|qualifications|training)\s*)?"
@@ -49,6 +52,185 @@ _DEGREE_RE = re.compile(
     re.IGNORECASE,
 )
 _YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+
+
+def extract_content_index_tag(text: str | None) -> tuple[str, str]:
+    """Return (outline_index, rest) from a heading like '[1.2.1] Adobe'."""
+    s = (text or "").strip()
+    m = _CONTENT_INDEX_TAG_RE.match(s)
+    if not m:
+        return "", s
+    return m.group(1), s[m.end() :].strip()
+
+
+def apply_outline_fields(job: dict[str, Any]) -> dict[str, Any]:
+    """Move [1.1.3] tags into outlineIndex; set outlineKind for section labels."""
+    out = dict(job)
+    if not out.get("outlineIndex"):
+        for key in ("employer", "role"):
+            raw = (out.get(key) or "").strip()
+            if not raw:
+                continue
+            idx, rest = extract_content_index_tag(raw)
+            if idx:
+                out["outlineIndex"] = idx
+                out[key] = rest
+                break
+    start = (out.get("start") or "").strip()
+    end = (out.get("end") or "").strip()
+    desc = (out.get("description") or out.get("Description") or "").strip()
+    role = (out.get("role") or "").strip()
+    if out.get("outlineIndex") and not start and not end and not desc and not role:
+        out["outlineKind"] = "section"
+    return out
+
+
+_TAGGED_LINE_RE = re.compile(r"^\[(\d+(?:\.\d+)*)\]\s*(.*)$", re.MULTILINE)
+_BULLET_PREFIX_RE = re.compile(r"^[\u2022\u00b7•]\s*")
+_EM_DASH_SPLIT_RE = re.compile(r"\s+[—]\s+")
+_PAREN_DATE_RE = re.compile(
+    r"^(.*?)\s+\((\d{1,2}/\d{4})\s+[–—-]\s+(\d{1,2}/\d{4}|CURRENT_DATE|[Pp]resent|[Cc]urrent)\)\s*$"
+)
+_DATE_TAIL_RE = re.compile(
+    r"^(.*?)\s+(\d{1,2}/\d{4})\s+[–—-]\s+(\d{1,2}/\d{4}|CURRENT_DATE|[Pp]resent|[Cc]urrent)\s*$"
+)
+
+
+def _normalize_outline_end(end_raw: str) -> str:
+    return "CURRENT_DATE" if end_raw.lower() in {"present", "current"} else end_raw
+
+
+def parse_content_index_heading(index: str, rest: str) -> dict[str, Any]:
+    """Turn `[1.2.1] • Adobe (03/2025 – 07/2025) — …` into a job dict."""
+    body = _BULLET_PREFIX_RE.sub("", (rest or "").strip())
+    left, desc = body, ""
+    parts = _EM_DASH_SPLIT_RE.split(body, maxsplit=1)
+    if len(parts) == 2:
+        left, desc = parts[0].strip(), parts[1].strip()
+    start = end = ""
+    employer = left
+    pm = _PAREN_DATE_RE.match(left)
+    dm = _DATE_TAIL_RE.match(left) if not pm else None
+    if pm:
+        employer, start, end = pm.group(1).strip(), pm.group(2), _normalize_outline_end(pm.group(3))
+    elif dm:
+        employer, start, end = dm.group(1).strip(), dm.group(2), _normalize_outline_end(dm.group(3))
+    role = ""
+    if desc and ":" in desc:
+        maybe_role, maybe_desc = desc.split(":", 1)
+        if any(tok in maybe_role for tok in ("Engineer", "Architect", "CTO", "Manager", "Lead")):
+            role = maybe_role.strip()
+            desc = maybe_desc.strip()
+    return {
+        "role": role,
+        "employer": employer,
+        "start": start,
+        "end": end,
+        "description": desc,
+        "outlineIndex": index,
+    }
+
+
+def extract_tagged_outline_entries(raw_text: str) -> list[tuple[str, str]]:
+    """Document-order unique `[1.1.3]` lines from extracted resume text."""
+    seen: set[str] = set()
+    out: list[tuple[str, str]] = []
+    for m in _TAGGED_LINE_RE.finditer(raw_text or ""):
+        idx, rest = m.group(1), m.group(2).strip()
+        if idx in seen:
+            continue
+        seen.add(idx)
+        out.append((idx, rest))
+    return out
+
+
+def _split_description_bullets(description: str) -> list[str]:
+    if not description:
+        return []
+    return [
+        p.strip()
+        for p in re.split(r"(?=[\u2022•]|\[\d+(?:\.\d+)*\])", description)
+        if p.strip()
+    ]
+
+
+def _llm_fragments_by_outline_index(json_jobs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Map outlineIndex → fields, splitting tagged bullets out of parent Descriptions."""
+    fragments: dict[str, dict[str, Any]] = {}
+    for job in json_jobs:
+        tagged: list[dict[str, Any]] = []
+        leftover: list[str] = []
+        for bullet in _split_description_bullets(job.get("Description") or job.get("description") or ""):
+            body = _BULLET_PREFIX_RE.sub("", bullet.strip())
+            m = _CONTENT_INDEX_TAG_RE.match(body)
+            if not m:
+                leftover.append(bullet)
+                continue
+            tagged.append(parse_content_index_heading(m.group(1), body[m.end() :].strip()))
+        parent_idx = str(job.get("outlineIndex") or "").strip()
+        if not parent_idx:
+            parent_idx, _ = extract_content_index_tag(job.get("employer") or "")
+        if parent_idx:
+            parent = dict(job)
+            if leftover:
+                parent["Description"] = "".join(leftover)
+                parent["description"] = parent["Description"]
+            elif tagged:
+                parent["Description"] = ""
+                parent["description"] = ""
+            fragments[parent_idx] = parent
+        for parsed in tagged:
+            prev = fragments.get(parsed["outlineIndex"], {})
+            llm_desc = parsed["description"]
+            fragments[parsed["outlineIndex"]] = {
+                **prev,
+                "employer": parsed["employer"] or prev.get("employer") or "",
+                "role": parsed["role"] or prev.get("role") or "",
+                "start": parsed["start"] or prev.get("start") or "",
+                "end": parsed["end"] or prev.get("end") or "",
+                "description": llm_desc or prev.get("description") or prev.get("Description") or "",
+                "Description": f"• {llm_desc}" if llm_desc else (prev.get("Description") or ""),
+                "outlineIndex": parsed["outlineIndex"],
+            }
+    return fragments
+
+
+def expand_jobs_one_per_content_index(
+    json_jobs: list[dict[str, Any]], raw_text: str
+) -> list[dict[str, Any]]:
+    """
+    One jobs.json row per unique content-index tag in the resume text.
+
+    The LLM often collapses `[1.1.1]` nested lines into a parent Description.
+    Tagged headings in raw_text are the source of truth.
+    """
+    tagged = extract_tagged_outline_entries(raw_text)
+    if not tagged:
+        return json_jobs
+
+    fragments = _llm_fragments_by_outline_index(json_jobs)
+    expanded: list[dict[str, Any]] = []
+    for index, rest in tagged:
+        from_text = parse_content_index_heading(index, rest)
+        from_llm = fragments.get(index, {})
+        llm_desc = (from_llm.get("Description") or from_llm.get("description") or "").strip()
+        text_desc = (from_text.get("description") or "").strip()
+        if llm_desc:
+            desc = llm_desc if llm_desc.startswith("•") else f"• {llm_desc}"
+        elif text_desc:
+            desc = text_desc if text_desc.startswith("•") else f"• {text_desc}"
+        else:
+            desc = ""
+        expanded.append({
+            "role": (from_text.get("role") or from_llm.get("role") or "").strip(),
+            "employer": (from_text.get("employer") or from_llm.get("employer") or "").strip(),
+            "start": from_text.get("start") or from_llm.get("start") or "",
+            "end": from_text.get("end") or from_llm.get("end") or "",
+            "description": desc,
+            "outlineIndex": index,
+        })
+
+    return jobs_to_json_format(expanded)
 
 
 def expand_skill_parens(name: str) -> list[str]:
@@ -136,8 +318,10 @@ def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 8192) -> s
     """Call LLM (provider from get_llm_provider / LLM_PROVIDER) and return response text. Anthropic only."""
     provider, client = _llm_provider()
     if provider == "anthropic":
+        # Prefer ANTHROPIC_MODEL; default to a current Sonnet ID (old dated ID 404s).
+        model = (os.environ.get("ANTHROPIC_MODEL") or "claude-sonnet-4-6").strip()
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=model,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
@@ -453,10 +637,12 @@ Output valid JSON only, no markdown or explanation. Use this exact schema:
   ]
 }
 Rules:
-- One job per experience block
+- Each content-index tag ([1], [1.1], [1.1.3], …) is its own job — including nested bullets under an employer. Do not fold tagged lines into a parent description.
+- Headings may include a content-index tag like [1], [1.1], or [1.2.3] before the employer name; preserve that tag at the start of the employer field exactly as written
 - Date formats are flexible: keep available precision from the resume (year-only, month-year, year-month, or full date are all acceptable)
 - Use "CURRENT_DATE" for present/current roles
 - Use • as bullet delimiter
+- Education entries: description is thesis/coursework only. Never copy Licenses, Certifications, Key skills, or a skills summary into an education description — those belong in other sections.
 - IMPORTANT: Wrap every technology, framework, tool, and skill in [SkillName] brackets. Examples:
   "Python and Pandas" -> "[Python] and [Pandas]"
   "AWS SageMaker" -> "[AWS SageMaker]" or "[AWS] [SageMaker]"
@@ -712,6 +898,11 @@ def jobs_to_json_format(jobs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "text color": text_color,
             "Description": (job.get("description") or "").strip(),
         }
+        if job.get("outlineIndex"):
+            json_job["outlineIndex"] = str(job["outlineIndex"]).strip()
+        if job.get("outlineKind"):
+            json_job["outlineKind"] = job["outlineKind"]
+        json_job = apply_outline_fields(json_job)
         result.append(json_job)
     return result
 
