@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" data-icon-viewbox="420 140 860 860">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#cbd5e1"/></marker>
+<style>
+text { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.title { font-size: 40px; font-weight: 700; fill: #f8fafc; }
+.subtitle { font-size: 22px; fill: #94a3b8; }
+.group { font-size: 19px; font-weight: 600; fill: #94a3b8; }
+.name { font-size: 25px; font-weight: 700; fill: #f8fafc; text-anchor: middle; }
+.sub { font-size: 18px; fill: #cbd5e1; text-anchor: middle; }
+.edge { font-size: 16px; fill: #e2e8f0; text-anchor: middle; }
+.note { font-size: 18px; fill: #94a3b8; }
+</style>
+</defs>
+<rect width="1600" height="1000" fill="#0f172a"/>
+<text x="60" y="78" class="title">resume-parser</text>
+<text x="60" y="114" class="subtitle">DOCX/PDF résumé → schema-validated JSON, with a human approval gate</text>
+<rect x="60" y="200" width="340" height="110" rx="14" fill="#334155" stroke="#cbd5e1" stroke-width="2.5"/>
+<text x="230" y="249" class="name">Résumé file</text>
+<text x="230" y="279" class="sub">DOCX / PDF</text>
+<rect x="480" y="200" width="340" height="110" rx="14" fill="#1e3a5f" stroke="#7dd3fc" stroke-width="2.5"/>
+<text x="650" y="249" class="name">Text extractor</text>
+<text x="650" y="279" class="sub">python-docx · pdfplumber</text>
+<rect x="900" y="200" width="340" height="110" rx="14" fill="#1e3a5f" stroke="#7dd3fc" stroke-width="2.5"/>
+<text x="1070" y="249" class="name">Job &amp; section parser</text>
+<text x="1070" y="279" class="sub">LLM structured extraction</text>
+<rect x="900" y="480" width="340" height="110" rx="14" fill="#1e3a5f" stroke="#7dd3fc" stroke-width="2.5"/>
+<text x="1070" y="529" class="name">Skill pipeline</text>
+<text x="1070" y="559" class="sub">regex + LLM categorize</text>
+<rect x="480" y="480" width="340" height="110" rx="14" fill="#4a3f14" stroke="#fde047" stroke-width="2.5"/>
+<text x="650" y="529" class="name">Merge approval</text>
+<text x="650" y="559" class="sub">human y / n / a / q</text>
+<rect x="60" y="480" width="340" height="110" rx="14" fill="#3b2f5c" stroke="#c4b5fd" stroke-width="2.5"/>
+<text x="230" y="529" class="name">JSON writer</text>
+<text x="230" y="559" class="sub">jobs · skills · categories</text>
+<rect x="60" y="760" width="340" height="110" rx="14" fill="#1f3d2f" stroke="#86efac" stroke-width="2.5"/>
+<text x="230" y="809" class="name">Schema validator</text>
+<text x="230" y="839" class="sub">jsonschema v1.0 contract</text>
+<rect x="480" y="760" width="340" height="110" rx="14" fill="#1e3a5f" stroke="#7dd3fc" stroke-width="2.5"/>
+<text x="650" y="809" class="name">HTML renderer</text>
+<text x="650" y="839" class="sub">Jinja2 template</text>
+<rect x="900" y="760" width="340" height="110" rx="14" fill="#334155" stroke="#cbd5e1" stroke-width="2.5"/>
+<text x="1070" y="809" class="name">Consumer app</text>
+<text x="1070" y="839" class="sub">reads JSON + resume.html</text>
+<rect x="1310" y="200" width="230" height="390" rx="14" fill="#4a3420" stroke="#fdba74" stroke-width="2.5"/>
+<text x="1425" y="389" class="name">Claude</text>
+<text x="1425" y="419" class="sub">Anthropic API</text>
+<polyline points="400,255 480,255" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="412.8" y="240" width="54.4" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="440" y="261" class="edge">file</text>
+<polyline points="820,255 900,255" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="813.6" y="240" width="92.8" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="860" y="261" class="edge">raw text</text>
+<polyline points="1070,310 1070,480" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="990" y="380" width="160" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="1070" y="401" class="edge">jobs + sections</text>
+<polyline points="900,535 820,535" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="770.4" y="520" width="179.2" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="860" y="541" class="edge">merge suggestions</text>
+<polyline points="480,535 400,535" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="393.6" y="520" width="92.8" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="440" y="541" class="edge">approved</text>
+<polyline points="230,590 230,760" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="183.6" y="660" width="92.8" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="230" y="681" class="edge">validate</text>
+<polyline points="400,575 440,575 440,700 650,700 650,760" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="508.2" y="685" width="73.6" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="545" y="706" class="edge">render</text>
+<polyline points="820,815 900,815" fill="none" stroke="#cbd5e1" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="799.2" y="800" width="121.6" height="28" rx="6" fill="#0f172a" opacity="0.92"/>
+<text x="860" y="821" class="edge">resume.html</text>
+<polyline points="1240,255 1310,255" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+<polyline points="1240,535 1310,535" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+<text x="60" y="950" class="note">Pip-installable package · CLIs: resume-to-json, validate-parsed-resume, render-resume-html</text>
+</svg>

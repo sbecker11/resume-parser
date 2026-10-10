@@ -1,5 +1,7 @@
 # resume-parser (resume-to-json)
 
+<a href="https://raw.githubusercontent.com/sbecker11/resume-parser/main/docs/architecture.png" target="_blank" rel="noopener noreferrer"><img src="docs/architecture-icon.png" width="420" height="420" alt="resume-parser architecture (click for the full diagram)"></a>
+
 Parse resumes (DOCX/PDF) into `jobs.json`, `skills.json`, `categories.json`, and `other-sections.json`.
 LLM-driven skill term merges with manual approval.
 
