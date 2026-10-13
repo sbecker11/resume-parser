@@ -1,5 +1,11 @@
 # resume-parser (resume-to-json)
 
+<!-- SUMMARY:START generated from workspace-linkedin-profile/Projects.json by scripts/build_readme_header.py; edit there -->
+Agentic DOCX/PDF → JSON résumé parser with approval gates.
+
+**Skills:** Python (Programming Language) · Agentic Workflows · Human-in-the-Loop Approval Gates · Anthropic Claude API · OpenAI API · Natural Language Processing (NLP) · pdfplumber · python-docx · Jinja2 · Data Engineering · Data Modeling · Extract, Transform, Load (ETL) · HTML · Bash/Shell Scripting · Automated Software Testing (JUnit/Jest/Vitest/PyTest)
+<!-- SUMMARY:END -->
+
 <a href="https://raw.githubusercontent.com/sbecker11/resume-parser/main/docs/architecture.png" target="_blank" rel="noopener noreferrer"><img src="docs/architecture-icon.png" width="420" height="420" alt="resume-parser architecture (click for the full diagram)"></a>
 
 Parse resumes (DOCX/PDF) into `jobs.json`, `skills.json`, `categories.json`, and `other-sections.json`.
